@@ -405,7 +405,7 @@ input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(
 #menu #lang{gap:0}
 #lang,#lang2{display:none!important}
 #setb{display:none!important}
-#shtabs,#sh_t{display:none!important}
+#sh_t,#shtabs [data-st="t"]{display:none!important}
 #stF{display:none!important}
 
 /* ---------- панели (модалки) ---------- */
@@ -2075,7 +2075,7 @@ document.addEventListener("visibilitychange",function(){if(!ctx)return;try{docum
 lab();
 })();</script> <script>
 (function(){
-const IB='<svg class="ico"><use href="#i-bp"/></svg>',IP='<svg class="ico"><use href="#i-bpp"/></svg>',LV=30,PREM=7500,xpNeed=i=>350+75*i,cum=l=>{let t=0;for(let i=0;i<l;i++)t+=xpNeed(i);return t},
+const IB='<svg class="ico"><use href="#i-bp"/></svg>',IP='<svg class="ico"><use href="#i-bpp"/></svg>',LV=30,PREM=300,xpNeed=i=>350+75*i,cum=l=>{let t=0;for(let i=0;i<l;i++)t+=xpNeed(i);return t},
 XPT={roll:2,x10:5,fuse:15,up:25,gem:10,rare:1,epic:3,leg:10},
 NM=[["Зимняя стужа","Winter Frost"],["Сердца и звёзды","Hearts & Stars"],["Весенний рассвет","Spring Dawn"],["Цветущий алтарь","Blooming Altar"],["Майская гроза","May Storm"],["Летний зной","Summer Heat"],["Звёздное лето","Starry Summer"],["Золотой урожай","Golden Harvest"],["Осенний туман","Autumn Mist"],["Тёмная луна","Dark Moon"],["Первый снег","First Snow"],["Новогоднее чудо","New Year Miracle"]];
 const sid=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")};
