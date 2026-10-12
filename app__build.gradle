@@ -9,7 +9,7 @@ android {
         minSdk 24
         targetSdk 36                            // требование Google Play с 31.08.2026
         versionCode 1                            // увеличивай на 1 при каждом обновлении: 2, 3, 4...
-        versionName "1.0"
+        versionName "1.0sjskskxjjx"
     }
 
     buildTypes {
