@@ -55,10 +55,12 @@ jobs:
           SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
           BT=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
           ls app/build/outputs/apk/release/
+          SRC=app/build/outputs/apk/release/app-release-unsigned.apk
+          [ -f "$SRC" ] || SRC=app/build/outputs/apk/release/app-release.apk
           "$BT/apksigner" sign --ks "$KEYSTORE_PATH" --ks-pass env:KEYSTORE_PASSWORD \
             --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
             --v4-signing-enabled false \
-            --out out/Crystal-Altar.apk app/build/outputs/apk/release/app-release-unsigned.apk
+            --out out/Crystal-Altar.apk "$SRC"
           "$BT/apksigner" verify --print-certs out/Crystal-Altar.apk | head -3
           rm -f out/*.idsig
           mkdir -p dist
