@@ -1,0 +1,64 @@
+name: Build APK
+on: [workflow_dispatch]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore folders
+        run: |
+          for f in app__*; do
+            d=$(echo "$f" | sed 's#__#/#g')
+            mkdir -p "$(dirname "$d")"
+            mv "$f" "$d"
+          done
+          find app -type f
+      - name: Inject build number
+        run: |
+          sed -i "s#__BUILD__#${{ github.run_number }}#g; s#__REPO__#${{ github.repository }}#g" app/src/main/assets/index.html
+          grep -c "${{ github.repository }}" app/src/main/assets/index.html
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17 }
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: 8.13 }
+      - name: Prepare signing key
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+          SECRET_STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          SECRET_ALIAS: ${{ secrets.KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_PASSWORD=$SECRET_STORE_PASS" >> $GITHUB_ENV
+            echo "KEY_ALIAS=$SECRET_ALIAS" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=$SECRET_KEY_PASS" >> $GITHUB_ENV
+          else
+            keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias tmp -keyalg RSA -keysize 2048 -validity 10000 -storepass temp1234 -keypass temp1234 -dname "CN=Crystal Altar"
+            echo "KEYSTORE_PASSWORD=temp1234" >> $GITHUB_ENV
+            echo "KEY_ALIAS=tmp" >> $GITHUB_ENV
+            echo "KEY_PASSWORD=temp1234" >> $GITHUB_ENV
+          fi
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
+      - run: gradle assembleRelease
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          mv app/build/outputs/apk/release/app-release.apk "out/Crystal-Altar.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Crystal Altar
+          path: out/
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Crystal Altar ${{ github.run_number }}
+          make_latest: true
+          files: out/Crystal-Altar.apk
