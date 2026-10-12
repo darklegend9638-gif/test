@@ -1,0 +1,8 @@
+<resources>
+    <color name="ic_launcher_background">#05060C</color>
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#05060c</item>
+        <item name="android:statusBarColor">#05060c</item>
+        <item name="android:navigationBarColor">#05060c</item>
+    </style>
+</resources>
