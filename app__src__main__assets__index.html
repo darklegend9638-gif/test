@@ -2476,7 +2476,7 @@ if(!/^https?:$/.test(location.protocol)||!window.fetch)return;
 /* ССЫЛКА НА СТРАНИЦУ СКАЧИВАНИЯ — вставьте сюда свой адрес, например "https://example.com/download" */
 const APP_BUILD="__BUILD__",APP_REPO="__REPO__"; /* в APK эти значения подставляет GitHub Actions при сборке */
 const REL=/^\d+$/.test(APP_BUILD);
-const UPDATE_SITE="https://ВАШ-САЙТ.example/download.html"; /* ← СЮДА АДРЕС ВАШЕГО САЙТА С УСТАНОВКОЙ ОБНОВЛЕНИЯ */
+const UPDATE_SITE="https://test1-qwjo.onrender.com/site/"; /* ← СЮДА АДРЕС ВАШЕГО САЙТА С УСТАНОВКОЙ ОБНОВЛЕНИЯ */
 const DOWNLOAD_URL=/^https?:\/\/(?!ВАШ-САЙТ)/.test(UPDATE_SITE)?UPDATE_SITE:(REL?"https://"+APP_REPO.split("/")[0]+".github.io/"+APP_REPO.split("/")[1]+"/download.html":"download.html");
 const loadedAt=Date.now();
 let base=null,shown=false,snooze=0,lastCheck=0;
