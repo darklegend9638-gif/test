@@ -101,7 +101,7 @@ li::marker{color:var(--gold);font-weight:700}
 <script>
 /* ============ НАСТРОЙКИ — меняйте только этот блок ============ */
 var CONFIG = {
-  APK_URL:  "Crystal-Altar.apk",        // файл APK лежит рядом с этой страницей, либо полная ссылка https://...
+  APK_URL:  "https://github.com/darklegend9638-gif/test/releases/latest/download/Crystal-Altar.apk", // всегда последний APK из GitHub Releases
   GAME_URL: "https://test1-qwjo.onrender.com/", // адрес браузерной версии игры
   VERSION:  ""                           // например "Версия 42" — пусто, если не нужно
 };
@@ -115,7 +115,15 @@ var CONFIG = {
   var dl=document.getElementById("dl"),play=document.getElementById("play");
   dl.href=CONFIG.APK_URL;dl.setAttribute("download","Crystal-Altar.apk");
   play.href=CONFIG.GAME_URL;
-  document.getElementById("ver").textContent=CONFIG.VERSION;
+  var ver=document.getElementById("ver");
+  ver.textContent=CONFIG.VERSION;
+  /* подтягиваем номер последней сборки; если нет сети или лимит API — тихо пропускаем */
+  try{
+    fetch("https://api.github.com/repos/darklegend9638-gif/test/releases/latest")
+      .then(function(r){return r.ok?r.json():null})
+      .then(function(j){if(j&&j.name&&!CONFIG.VERSION)ver.textContent=j.name})
+      .catch(function(){});
+  }catch(e){}
   /* на iPhone/iPad APK не ставится — прячем кнопку и оставляем только браузерную версию */
   if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){dl.style.display="none";play.className="btn main"}
 })();
