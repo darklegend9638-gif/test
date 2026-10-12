@@ -82,6 +82,6 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
-          name: Crystal Altar ${{ github.run_number }}
+          name: Crystal Altar 2 (${{ github.run_number }})
           make_latest: true
           files: out/Crystal-Altar.apk
