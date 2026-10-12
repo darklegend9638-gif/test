@@ -130,9 +130,9 @@ li::marker{color:var(--gold);font-weight:700}
   document.querySelectorAll("[data-ru]").forEach(function(e){e.textContent=e.getAttribute("data-"+lang)});
   document.title=ru?"Скачать Кристальный алтарь":"Download Crystal Altar";
   /* кнопка скачивает последний APK из GitHub Releases (репозиторий определяется по адресу страницы) */
-  var h=location.hostname,m=h.match(/^(.+)\.github\.io$/),r=location.pathname.split("/")[1];
   var dl=document.getElementById("dl");
-  if(m&&r&&dl){dl.href="https://github.com/"+m[1]+"/"+r+"/releases/latest/download/Crystal-Altar.apk";dl.removeAttribute("download")}
+  var APK="https://github.com/darklegend9638-gif/test/releases/latest/download/Crystal-Altar.apk";
+  if(dl){dl.href=APK;dl.removeAttribute("download")}
 })();
 </script>
 </body>
