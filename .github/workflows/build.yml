@@ -33,12 +33,13 @@ jobs:
           SECRET_ALIAS: ${{ secrets.KEY_ALIAS }}
           SECRET_KEY_PASS: ${{ secrets.KEY_PASSWORD }}
         run: |
-          if [ -n "$KEYSTORE_B64" ]; then
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$SECRET_STORE_PASS" ] && [ -n "$SECRET_ALIAS" ] && [ -n "$SECRET_KEY_PASS" ]; then
             echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "KEYSTORE_PASSWORD=$SECRET_STORE_PASS" >> $GITHUB_ENV
             echo "KEY_ALIAS=$SECRET_ALIAS" >> $GITHUB_ENV
             echo "KEY_PASSWORD=$SECRET_KEY_PASS" >> $GITHUB_ENV
           else
+            echo "::warning::Secrets неполные или пустые - использую временный ключ"
             keytool -genkeypair -keystore "$RUNNER_TEMP/release.jks" -alias tmp -keyalg RSA -keysize 2048 -validity 10000 -storepass temp1234 -keypass temp1234 -dname "CN=Crystal Altar"
             echo "KEYSTORE_PASSWORD=temp1234" >> $GITHUB_ENV
             echo "KEY_ALIAS=tmp" >> $GITHUB_ENV
