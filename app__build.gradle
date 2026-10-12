@@ -8,31 +8,12 @@ android {
         applicationId "com.crystalaltar.game"   // ← должен быть уникальным в Google Play
         minSdk 24
         targetSdk 36                            // требование Google Play с 31.08.2026
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
+        versionCode 1
         versionName "1.0"
     }
 
-    def ksPath = System.getenv("KEYSTORE_PATH")
-    def ksPass = System.getenv("KEYSTORE_PASSWORD")
-    def ksAlias = System.getenv("KEY_ALIAS")
-    def ksKeyPass = System.getenv("KEY_PASSWORD")
-    def canSign = ksPath && ksPass && ksAlias && ksKeyPass
-
-    signingConfigs {
-        release {
-            if (canSign) {
-                storeFile file(ksPath)
-                storePassword ksPass
-                keyAlias ksAlias
-                keyPassword ksKeyPass
-            }
-        }
-    }
     buildTypes {
-        release {
-            minifyEnabled false
-            if (canSign) signingConfig signingConfigs.release
-        }
+        release { minifyEnabled false }
     }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }
