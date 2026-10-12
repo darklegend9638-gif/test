@@ -18,7 +18,7 @@ jobs:
       - name: Inject build number
         run: |
           sed -i "s#__BUILD__#${{ github.run_number }}#g; s#__REPO__#${{ github.repository }}#g" app/src/main/assets/index.html
-          grep -c "${{ github.repository }}" app/src/main/assets/index.html
+          grep -c "${{ github.repository }}" app/src/main/assets/index.html || true
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: android-actions/setup-android@v3
@@ -49,10 +49,16 @@ jobs:
       - run: gradle assembleRelease
         env:
           VERSION_CODE: ${{ github.run_number }}
-      - name: Rename APK
+      - name: Sign APK
         run: |
           mkdir -p out
-          mv app/build/outputs/apk/release/app-release.apk "out/Crystal-Altar.apk"
+          SDK="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          BT=$(ls -d "$SDK"/build-tools/* | sort -V | tail -1)
+          ls app/build/outputs/apk/release/
+          "$BT/apksigner" sign --ks "$KEYSTORE_PATH" --ks-pass env:KEYSTORE_PASSWORD \
+            --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
+            --out out/Crystal-Altar.apk app/build/outputs/apk/release/app-release-unsigned.apk
+          "$BT/apksigner" verify --print-certs out/Crystal Altar.apk | head -3
       - uses: actions/upload-artifact@v4
         with:
           name: Crystal Altar
@@ -62,4 +68,4 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Crystal Altar ${{ github.run_number }}
           make_latest: true
-          files: out/Crystal-Altar.apk
+          files: out/Crystal Altar.apk
