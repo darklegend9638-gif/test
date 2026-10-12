@@ -8,8 +8,8 @@ android {
         applicationId "com.crystalaltar.game"   // ← должен быть уникальным в Google Play
         minSdk 24
         targetSdk 36                            // требование Google Play с 31.08.2026
-        versionCode (System.getenv("VERSION_CODE") ?: "1").toInteger()
-        versionName (System.getenv("VERSION_CODE") ?: "1.0")
+        versionCode 1
+        versionName "1.0"
     }
 
     signingConfigs {
