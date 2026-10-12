@@ -2,19 +2,26 @@ name: Build APK
 on: [workflow_dispatch]
 permissions:
   contents: write
+concurrency:
+  group: build-apk
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - name: Restore folders
         run: |
+          # удаляем устаревшие иконки из прошлых загрузок (из-за них падал processReleaseResources)
+          rm -rf app/src/main/res/mipmap-* app/src/main/res/drawable-anydpi* 2>/dev/null || true
           for f in app__*; do
             d=$(echo "$f" | sed 's#__#/#g')
             mkdir -p "$(dirname "$d")"
             mv "$f" "$d"
           done
-          find app -type f
+          find app -type f | grep -v '/assets/' || true
+          test -f app/src/main/assets/index.html
       - name: Inject build number
         run: |
           sed -i "s#__BUILD__#${{ github.run_number }}#g; s#__REPO__#${{ github.repository }}#g" app/src/main/assets/index.html
@@ -46,7 +53,8 @@ jobs:
             echo "KEY_PASSWORD=temp1234" >> $GITHUB_ENV
           fi
           echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> $GITHUB_ENV
-      - run: gradle assembleRelease
+      - name: Build release APK
+        run: gradle assembleRelease --no-daemon --stacktrace
         env:
           VERSION_CODE: ${{ github.run_number }}
       - name: Sign APK
@@ -63,21 +71,14 @@ jobs:
             --out out/Crystal-Altar.apk "$SRC"
           "$BT/apksigner" verify --print-certs out/Crystal-Altar.apk | head -3
           rm -f out/*.idsig
-          mkdir -p dist
-          cp out/Crystal-Altar.apk "dist/Crystal Altar.apk"
       - name: Put APK into site folder
         run: |
           mkdir -p site
           cp out/Crystal-Altar.apk site/Crystal-Altar.apk
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add site/Crystal-Altar.apk
-          git commit -m "APK build ${{ github.run_number }}" || exit 0
-          git push
       - uses: actions/upload-artifact@v4
         with:
-          name: Crystal Altar
-          path: dist/
+          name: Crystal-Altar
+          path: out/Crystal-Altar.apk
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
