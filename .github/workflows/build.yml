@@ -63,6 +63,15 @@ jobs:
           rm -f out/*.idsig
           mkdir -p dist
           cp out/Crystal-Altar.apk "dist/Crystal Altar.apk"
+      - name: Put APK into site folder
+        run: |
+          mkdir -p site
+          cp out/Crystal-Altar.apk site/Crystal-Altar.apk
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add site/Crystal-Altar.apk
+          git commit -m "APK build ${{ github.run_number }}" || exit 0
+          git push
       - uses: actions/upload-artifact@v4
         with:
           name: Crystal Altar
