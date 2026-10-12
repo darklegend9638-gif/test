@@ -2476,8 +2476,8 @@ if(!/^https?:$/.test(location.protocol)||!window.fetch)return;
 /* ССЫЛКА НА СТРАНИЦУ СКАЧИВАНИЯ — вставьте сюда свой адрес, например "https://example.com/download" */
 const APP_BUILD="__BUILD__",APP_REPO="__REPO__"; /* в APK эти значения подставляет GitHub Actions при сборке */
 const REL=/^\d+$/.test(APP_BUILD);
-const UPDATE_SITE="https://test1-qwjo.onrender.com/site/"; /* ← СЮДА АДРЕС ВАШЕГО САЙТА С УСТАНОВКОЙ ОБНОВЛЕНИЯ */
-const DOWNLOAD_URL=/^https?:\/\/(?!ВАШ-САЙТ)/.test(UPDATE_SITE)?UPDATE_SITE:(REL?"https://"+APP_REPO.split("/")[0]+".github.io/"+APP_REPO.split("/")[1]+"/download.html":"download.html");
+const UPDATE_SITE="https://test1-qwjo.onrender.com/"; /* ссылка на страницу скачивания обновления */
+const DOWNLOAD_URL=UPDATE_SITE;
 const loadedAt=Date.now();
 let base=null,shown=false,snooze=0,lastCheck=0;
 const hash=t=>{let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)+t.length};
@@ -2519,9 +2519,9 @@ function ensure(){
   m.querySelector("#updGo").onclick=async e=>{
     const b=e.currentTarget;b.disabled=true;b.textContent=L2("Загрузка…","Loading…");
     try{typeof push==="function"&&await push(true)}catch(x){}
-    if(DOWNLOAD_URL){location.href=DOWNLOAD_URL;return}
-    try{await fetch(location.pathname+location.search,{cache:"reload"})}catch(x){}
-    location.reload();
+    let w=null;try{w=window.open(DOWNLOAD_URL,"_blank","noopener")}catch(x){}
+    if(!w)location.href=DOWNLOAD_URL;
+    b.disabled=false;b.textContent=L2("Скачать новую версию","Download new version");
   };
   return m;
 }
