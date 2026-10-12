@@ -57,15 +57,19 @@ jobs:
           ls app/build/outputs/apk/release/
           "$BT/apksigner" sign --ks "$KEYSTORE_PATH" --ks-pass env:KEYSTORE_PASSWORD \
             --ks-key-alias "$KEY_ALIAS" --key-pass env:KEY_PASSWORD \
+            --v4-signing-enabled false \
             --out out/Crystal-Altar.apk app/build/outputs/apk/release/app-release-unsigned.apk
-          "$BT/apksigner" verify --print-certs out/Crystal Altar.apk | head -3
+          "$BT/apksigner" verify --print-certs out/Crystal-Altar.apk | head -3
+          rm -f out/*.idsig
+          mkdir -p dist
+          cp out/Crystal-Altar.apk "dist/Crystal Altar.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: Crystal Altar
-          path: out/
+          path: dist/
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: Crystal Altar ${{ github.run_number }}
           make_latest: true
-          files: out/Crystal Altar.apk
+          files: out/Crystal-Altar.apk
