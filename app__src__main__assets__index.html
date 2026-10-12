@@ -2519,9 +2519,8 @@ function ensure(){
   m.querySelector("#updGo").onclick=async e=>{
     const b=e.currentTarget;b.disabled=true;b.textContent=L2("Загрузка…","Loading…");
     try{typeof push==="function"&&await push(true)}catch(x){}
-    let w=null;try{w=window.open(DOWNLOAD_URL,"_blank","noopener")}catch(x){}
-    if(!w)location.href=DOWNLOAD_URL;
-    b.disabled=false;b.textContent=L2("Скачать новую версию","Download new version");
+    location.href=DOWNLOAD_URL; /* в APK MainActivity откроет внешний браузер */
+    setTimeout(()=>{b.disabled=false;b.textContent=L2("Скачать новую версию","Download new version")},1500);
   };
   return m;
 }
