@@ -2568,6 +2568,116 @@ setInterval(()=>{if(ready&&off){S.lt=Date.now();dirty=!0}},5000);
 })();
 </script>
 <script>
+/* ===== ДОП. ВОЗМОЖНОСТИ: альбом, темы, экономия батареи, резервная копия ===== */
+(function(){"use strict";
+const g=id=>document.getElementById(id),H=document.documentElement;
+const ld=k=>{try{return localStorage.getItem("ca-"+k)}catch(e){return null}},sv=(k,v)=>{try{localStorage.setItem("ca-"+k,v)}catch(e){}};
+const css=document.createElement("style");
+css.textContent='html[data-theme=neon]{--bg:#07020f;--bg2:#160828;--line:rgba(255,80,255,.35);--btn1:#ff2bd6;--btn2:#7c4dff;--inp:#0d0418}html[data-theme=light]{color-scheme:light;--bg:#eef3fb;--bg2:#fff;--glass:rgba(255,255,255,.72);--line:rgba(15,25,60,.12);--text:#0d1630;--mute:#5a6585;--inp:#f6f8fd}html.eco *{animation:none!important;transition:none!important}html.eco canvas{display:none!important}#xtp .xr{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#xtp .xr button{flex:1 1 auto;padding:9px 10px}#xtp .xc{padding:5px 9px;border:1px solid var(--line);border-radius:10px;font-size:13px}#xtp textarea{width:100%;min-height:70px;background:var(--inp);color:var(--text);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px}';
+document.head.appendChild(css);
+const th=ld("theme");if(th)H.setAttribute("data-theme",th);
+if(ld("eco")==="1")H.classList.add("eco");
+let F="all",T="alb";
+const tab=(k,t)=>`<button class="${T===k?"":"alt"}" data-x="t:${k}">${t}</button>`;
+function album(){
+  let tot=0,got=0,h="";
+  R.forEach((e,i)=>{
+    const its=e.items.filter(t=>{const f=+S.found[t]>0;tot++;f&&got++;return F==="all"||(F==="f")===f});
+    if(its.length)h+=`<div style="margin-top:12px;font:700 14px var(--fh);color:${e.c}">${L2(e.ru,e.n)}</div><div class="xr">`+its.map(t=>{const n=+S.found[t]||0;return n?`<span class="xc" data-x="i:${i}:${t.replace(/"/g,"")}" style="border-color:${e.c}">${t} ×${n}</span>`:`<span class="xc" style="opacity:.45">❔ ???</span>`}).join("")+"</div>"});
+  return `<div style="color:var(--mute);font-size:13px">${L2("Найдено","Found")}: ${got}/${tot}</div><div class="xr">`+
+   [["all",L2("Все","All")],["f",L2("Найденные","Found")],["m",L2("Ненайденные","Missing")]].map(a=>`<button class="${F===a[0]?"":"alt"}" data-x="f:${a[0]}">${a[1]}</button>`).join("")+"</div>"+h}
+function sett(){
+  const eco=H.classList.contains("eco"),cur=H.getAttribute("data-theme")||"dark";
+  return `<div style="font-weight:700;margin-top:6px">🎨 ${L2("Тема","Theme")}</div><div class="xr">`+
+   [["dark","🌙 "+L2("Ночь","Night")],["neon","💜 "+L2("Неон","Neon")],["light","☀️ "+L2("Светлая","Light")]].map(a=>`<button class="${cur===a[0]?"":"alt"}" data-x="th:${a[0]}">${a[1]}</button>`).join("")+
+   `</div><div style="font-weight:700;margin-top:10px">🔋 ${L2("Экономия батареи","Battery saver")}</div><div class="xr"><button class="${eco?"":"alt"}" data-x="eco">${eco?L2("Включена","On"):L2("Выключена","Off")}</button></div><div style="color:var(--mute);font-size:12px">${L2("Отключает анимации и фон со звёздами.","Turns off animations and the star background.")}</div>`+
+   `<div style="font-weight:700;margin-top:14px">💾 ${L2("Резервная копия","Backup")}</div><div class="xr"><button data-x="exp">${L2("Экспорт кода","Export code")}</button><button class="alt" data-x="imp">${L2("Импорт кода","Import code")}</button></div><textarea id="xbk" placeholder="${L2("Код сохранения","Save code")}"></textarea>`}
+function draw(){const b=g("xtb");if(!b)return;b.innerHTML=`<div class="xr">${tab("alb","📖 "+L2("Альбом","Album"))}${tab("set","⚙️ "+L2("Настройки","Settings"))}</div>`+(T==="alb"?album():sett())}
+function enc(){return btoa(unescape(encodeURIComponent(JSON.stringify(S))))}
+function act(d){
+  const a=d.split(":");
+  if(a[0]==="t"){T=a[1];draw()}
+  else if(a[0]==="f"){F=a[1];draw()}
+  else if(a[0]==="i"){const e=R[+a[1]],n=a.slice(2).join(":"),c=+S.found[Object.keys(S.found).find(k=>k.replace(/"/g,"")===n)]||0;toast(n+" · "+L2(e.ru,e.n)+" · "+L2("шанс ~","chance ~")+(e.w/e.items.length).toFixed(3)+"% · ×"+c)}
+  else if(a[0]==="th"){H.setAttribute("data-theme",a[1]);sv("theme",a[1]);draw()}
+  else if(a[0]==="eco"){H.classList.toggle("eco");sv("eco",H.classList.contains("eco")?"1":"0");draw()}
+  else if(a[0]==="exp"){const t=g("xbk");t.value=enc();t.select();try{navigator.clipboard.writeText(t.value);toast(L2("Код скопирован","Code copied"),"ok")}catch(e){}}
+  else if(a[0]==="imp"){
+    try{const o=JSON.parse(decodeURIComponent(escape(atob(g("xbk").value.trim()))));
+      if(!o||typeof o!=="object"||!o.found)throw 0;
+      if(!confirm(L2("Заменить текущий прогресс кодом?","Replace current progress with the code?")))return;
+      Object.keys(S).forEach(k=>delete S[k]);Object.assign(S,o);normS();render();save();pushSoon();toast(L2("Прогресс загружен","Progress loaded"),"ok");draw()
+    }catch(e){toast(L2("Неверный код","Invalid code"),"err")}}}
+function build(){
+  const wp=g("wdp"),wb=g("wdb");if(!wp||!wb||g("xtp"))return;
+  const p=document.createElement("div");p.id="xtp";p.className=wp.className;p.style.cssText="display:none;text-align:left";
+  p.innerHTML='<b class="hd">✨ '+L2("Ещё","More")+'</b><div id="xtb"></div>';
+  const x=wp.querySelector(".pclose").cloneNode(true);x.onclick=()=>closePanel();p.prepend(x);wp.after(p);
+  p.onclick=e=>{const b=e.target.closest("[data-x]");if(b)act(b.dataset.x)};
+  const _op=window.openPanel;window.openPanel=function(e){if(e!=="xtp")p.style.display="none";return _op.apply(this,arguments)};
+  const b=wb.cloneNode(true);b.id="xtbtn";b.innerHTML="✨ "+L2("Ещё","More");wb.after(b);
+  b.onclick=()=>{p.style.display="block";draw();_op("xtp")}}
+build();
+})();
+</script>
+<script>
+/* ===== БОССЫ, ЯЙЦА И СЛИЯНИЕ ПИТОМЦЕВ, АНИМАЦИЯ РЕДКИХ, ЧТО НОВОГО, ОБУЧЕНИЕ ===== */
+(function(){"use strict";
+const g=id=>document.getElementById(id),ld=k=>{try{return localStorage.getItem("ca-"+k)}catch(e){return null}},sv=(k,v)=>{try{localStorage.setItem("ca-"+k,v)}catch(e){}};
+const BOSS=60,EGG=5;let T="b";
+const css=document.createElement("style");
+css.textContent='#x2p .xr{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}#x2p .xr button{flex:1 1 auto;padding:9px 10px}#x2p .bar{height:12px;border-radius:8px;background:var(--inp);overflow:hidden;margin:6px 0}#x2p .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--btn1),var(--btn2))}#rareFx{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.35),rgba(0,0,0,.6));animation:rfx 2.2s ease-out forwards}#rareFx b{font:800 34px var(--fh);text-shadow:0 0 24px currentColor}#rareFx span{font-size:56px}@keyframes rfx{0%{opacity:0;transform:scale(.6)}15%{opacity:1;transform:scale(1.08)}80%{opacity:1}100%{opacity:0;transform:scale(1.2)}}';
+document.head.appendChild(css);
+const wn=i=>{const w=WORLDS[i];return L2(w.ru,w.en)};
+function st(){if(!S.bp||typeof S.bp!=="object")S.bp={};if(!S.bd||typeof S.bd!=="object")S.bd={};if(!Array.isArray(S.pt))S.pt=[]}
+function draw(){
+  const b=g("x2b");if(!b||g("x2p").style.display!=="block")return;st();
+  const tb=(k,t)=>`<button class="${T===k?"":"alt"}" data-y="t:${k}">${t}</button>`;
+  let h=`<div class="xr">${tb("b","👹 "+L2("Боссы","Bosses"))}${tb("p","🐾 "+L2("Питомцы","Pets"))}${tb("n","📰 "+L2("Новое","News"))}</div>`;
+  if(T==="b"){
+    const w=S.w||0,p=Math.min(BOSS,S.bp[w]||0),all=WORLDS.every(x=>S.bd[x.id]);
+    h+=`<div class="glass ti" style="display:block"><b>${WORLDS[w].ic} ${L2("Босс мира: ","World boss: ")}${wn(w)}</b><div class="bar"><i style="width:${p/BOSS*100}%"></i></div><span style="color:var(--mute);font-size:13px">${S.bd[w]?"✅ "+L2("Побеждён","Defeated"):L2("Делай роллы в этом мире: ","Roll in this world: ")+p+"/"+BOSS}</span>${p>=BOSS&&!S.bd[w]?`<div class="xr"><button data-y="kill">⚔️ ${L2("Добить босса","Finish boss")}</button></div>`:""}</div>`;
+    h+=`<div style="color:var(--mute);font-size:13px;margin-top:8px">${L2("Награда: монеты, 2 💎 и трофей мира. Победи боссов всех миров — доход ×1.25 навсегда.","Reward: coins, 2 💎 and a world trophy. Beat every world's boss for permanent ×1.25 income.")}${all?" 🏆":""}</div>`;
+    h+=`<div class="xr" style="margin-top:8px">`+WORLDS.map(x=>`<span class="xc" style="padding:5px 9px;border:1px solid var(--line);border-radius:10px;opacity:${S.bd[x.id]?1:.4}">${S.bd[x.id]?"🏆":"🔒"} ${x.ic}</span>`).join("")+"</div>"}
+  else if(T==="p"){
+    const c={};S.pt.forEach(i=>c[i]=(c[i]||0)+1);
+    h+=`<div class="xr"><button data-y="egg" ${(S.gem||0)<EGG?"disabled":""}>🥚 ${L2("Открыть яйцо","Open egg")} (${EGG} 💎)</button></div><div style="color:var(--mute);font-size:12px">${L2("Слияние: 2 одинаковых питомца → питомец следующей редкости.","Merge: 2 identical pets → a pet of the next rarity.")}</div>`;
+    h+=Object.keys(c).map(i=>{const p=PETS.find(o=>o.id===i);if(!p)return"";const nx=PETS.find(o=>o.id==="p"+(p.r+1)+i.slice(-1));return`<div class="glass ti"><div class="tx"><b>${L2(p.ru,p.en)} ×${c[i]}</b><span>+${p.inc} ${L2("к доходу","income")}</span></div>${c[i]>1&&nx?`<button data-y="m:${i}">${L2("Слить","Merge")}</button>`:""}</div>`}).join("")||`<div style="color:var(--mute);margin-top:10px">${L2("Питомцев пока нет","No pets yet")}</div>`}
+  else h+=`<div class="glass ti" style="display:block"><b>📰 ${L2("Что нового","What's new")}</b><ul style="margin:8px 0 0 18px;font-size:13px;color:var(--mute)"><li>${L2("Боссы миров и трофеи","World bosses and trophies")}</li><li>${L2("Яйца и слияние питомцев","Pet eggs and merging")}</li><li>${L2("Альбом, темы, экономия батареи, резервная копия","Album, themes, battery saver, backup")}</li><li>${L2("Анимация редких выпадений","Rare drop animation")}</li></ul><div class="xr"><button class="alt" data-y="tut">${L2("Показать обучение","Show tutorial")}</button></div></div>`;
+  b.innerHTML=h}
+function fx(r){const d=document.createElement("div");d.id="rareFx";d.style.color=r.c;d.innerHTML=`<span>✨</span><b>${L2(r.ru,r.n)}!</b>`;document.body.appendChild(d);try{navigator.vibrate&&navigator.vibrate(120)}catch(e){}setTimeout(()=>d.remove(),2300)}
+function tut(){
+  const S3=[L2("🎲 Жми «Ролл» — выпадают предметы разной редкости.","🎲 Tap Roll — items of different rarity drop."),L2("📈 Покупай удачу и доход за монеты, копи питомцев и тикеты.","📈 Buy luck and income with coins, collect pets and tickets."),L2("🎁 Заходи за наградами, делай задания и побеждай боссов миров!","🎁 Claim rewards, do quests and beat world bosses!")];
+  let i=0;const m=document.createElement("div");m.className="confirm-modal show";m.style.zIndex=2147483000;
+  const r=()=>{m.innerHTML=`<div class="modal-box"><div class="modal-title" style="text-align:center">${L2("Подсказка","Tip")} ${i+1}/3</div><div class="modal-text" style="text-align:center">${S3[i]}</div><div class="modal-actions"><button id="tn">${i<2?L2("Далее","Next"):L2("Понятно","Got it")}</button></div></div>`;m.querySelector("#tn").onclick=()=>{if(++i<3)r();else{m.remove();sv("tut","1")}}};
+  r();document.body.appendChild(m)}
+function act(d){
+  const a=d.split(":");st();
+  if(a[0]==="t"){T=a[1]}
+  else if(a[0]==="kill"){const w=S.w||0;if((S.bp[w]||0)<BOSS||S.bd[w])return;S.bd[w]=1;const c=Math.max(1000,Math.floor(incNow()*3000));S.coins+=c;S.gem=(S.gem||0)+2;toast("👹 "+L2("Босс побеждён! +","Boss defeated! +")+fmt(c)+" 🪙 +2 💎","ok");render();save();pushSoon()}
+  else if(a[0]==="egg"){if((S.gem||0)<EGG)return;S.gem-=EGG;const x=Math.random(),r=x<.6?0:x<.85?1:x<.95?2:3;const l=PETS.filter(p=>p.r===Math.min(r,PETS[PETS.length-1].r));const p=l[Math.floor(Math.random()*l.length)]||PETS[0];S.pt.push(p.id);toast("🥚 "+L2(p.ru,p.en),"ok");render();save();pushSoon()}
+  else if(a[0]==="m"){const id=a[1],p=PETS.find(o=>o.id===id),nx=p&&PETS.find(o=>o.id==="p"+(p.r+1)+id.slice(-1));if(!nx||S.pt.filter(x=>x===id).length<2)return;for(let k=0;k<2;k++)S.pt.splice(S.pt.indexOf(id),1);S.pt.push(nx.id);toast("🔀 "+L2(nx.ru,nx.en),"ok");render();save();pushSoon()}
+  else if(a[0]==="tut"){tut();return}
+  draw()}
+function build(){
+  const wp=g("wdp"),wb=g("wdb");if(!wp||!wb||g("x2p"))return;
+  const p=document.createElement("div");p.id="x2p";p.className=wp.className;p.style.cssText="display:none;text-align:left";
+  p.innerHTML='<b class="hd">👹 '+L2("Приключения","Adventure")+'</b><div id="x2b"></div>';
+  const x=wp.querySelector(".pclose").cloneNode(true);x.onclick=()=>closePanel();p.prepend(x);wp.after(p);
+  p.onclick=e=>{const b=e.target.closest("[data-y]");if(b&&!b.disabled)act(b.dataset.y)};
+  const _op=window.openPanel;window.openPanel=function(e){if(e!=="x2p")p.style.display="none";return _op.apply(this,arguments)};
+  const b=wb.cloneNode(true);b.id="x2btn";b.innerHTML="👹 "+L2("Приключения","Adventure");wb.after(b);
+  b.onclick=()=>{p.style.display="block";draw();_op("x2p")}}
+build();
+const pm=window.prMul;if(pm)window.prMul=()=>pm()*(S.bd&&WORLDS.every(x=>S.bd[x.id])?1.25:1);
+let lr=null,lb=null;const ix=n=>R.findIndex(r=>r.n===n),HI=Math.min(ix("Primordial"),ix("Omnipotent"),ix("Absolute"));
+setInterval(()=>{if(typeof ready==="undefined"||!ready)return;st();
+  if(lr===null){lr=S.rolls;lb=S.best;if(!ld("tut"))setTimeout(tut,1200);return}
+  const d=S.rolls-lr;if(d>0){lr=S.rolls;const w=S.w||0;if(!S.bd[w])S.bp[w]=(S.bp[w]||0)+d;if(g("x2p").style.display==="block")draw()}
+  if(S.best>lb&&HI>=0&&S.best>=HI&&R[S.best])fx(R[S.best]);lb=S.best},700);
+})();
+</script>
+<script>
 /* ===================== ОБНОВЛЕНИЕ ИГРЫ ===================== */
 (function(){
 "use strict";
