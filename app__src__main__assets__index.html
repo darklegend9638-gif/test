@@ -1425,7 +1425,8 @@ async function trPartnerRefresh(){if(!TOKEN||!tSel||!trOpen()||tBusy)return;cons
  const d=r.data||{},pd=d.dupes||{},pc={coins:Math.floor(+d.coins)||0,gems:Math.floor(+d.gems)||0};if(JSON.stringify([pd,pc])===JSON.stringify([trPD,trPC]))return;trPD=pd;trPC=pc;
  for(const k in trW){const m=k==="$coins"?pc.coins:k==="$gems"?pc.gems:pd[k]||0;trW[k]>m&&(m>0?trW[k]=m:delete trW[k])}drawTrI()}
 setInterval(__one(()=>{if(!document.hidden)return trPartnerRefresh()}),2500);
-let _claiming=!1;async function claim(){if(!TOKEN||!ready||_claiming||document.hidden||Date.now()<claimOff)return;_claiming=!0;try{await serial(async()=>{const e=await rpc("g2_claim",{p_token:TOKEN,p_v:S._v});if(e.error){/Could not find|schema cache/i.test(e.error)&&(claimOff=Date.now()+6e4);return}const t=e.data||{};if(t.stale){await resync();return}const n=Math.floor(+t.amount)||0;n<1||(S.coins+=n,t.v!=null&&(S._v=t.v),dirty=!0,render(),showNotice(tr("tgot"),tr("tgotx",fmt(n),t.from||"?"),!0))})}finally{_claiming=!1}}setInterval(claim,2000),setTimeout(claim,2e3),document.addEventListener("visibilitychange",()=>{document.hidden||claim()});let shLang="";function renderShop(){$("shbal").textContent="🪙 "+fmt(S.coins)+"   💎 "+fmt(S.gem||0),shLang=LANG}function updShop(){if($("shp").style.display==="block"){if(shLang!==LANG)return renderShop();$("shbal").textContent="🪙 "+fmt(S.coins)+"   💎 "+fmt(S.gem||0)}}/* ==========================================================================================
+let _claiming=!1;async function claim(){if(!TOKEN||!ready||_claiming||document.hidden||Date.now()<claimOff)return;_claiming=!0;try{await serial(async()=>{const e=await rpc("g2_claim",{p_token:TOKEN,p_v:S._v});if(e.error){/Could not find|schema cache/i.test(e.error)&&(claimOff=Date.now()+6e4);return}const t=e.data||{};if(t.stale){await resync();return}const n=Math.floor(+t.amount)||0;n<1||(S.coins+=n,t.v!=null&&(S._v=t.v),dirty=!0,render(),showNotice(tr("tgot"),tr("tgotx",fmt(n),t.from||"?"),!0))})}finally{_claiming=!1}}setInterval(claim,2000),setTimeout(claim,2e3),document.addEventListener("visibilitychange",()=>{document.hidden||claim()});let shLang="";function shBal(){setH($("shbal"),`<div class="bch c"><i>🪙</i><span><small>${L2("Монеты","Coins")}</small><b>${fmt(S.coins)}</b></span></div><div class="bch g"><i>💎</i><span><small>${L2("Тикеты","Tickets")}</small><b>${fmt(S.gem||0)}</b></span></div>`)}
+function renderShop(){shBal(),shLang=LANG}function updShop(){if($("shp").style.display==="block"){if(shLang!==LANG)return renderShop();shBal()}}/* ==========================================================================================
    ЕЖЕДНЕВНЫЕ КВЕСТЫ — настройки (можно менять, HTML знать не нужно)
    Каждый день (в полночь по времени устройства) выбираются QUESTS_PER_DAY квестов из QUEST_POOL.
    Набор квестов один и тот же у всех игроков в этот день.
@@ -2474,7 +2475,7 @@ function renderGP(){
   const el=$("gpl");if(!el)return;
   $("shgsub").textContent=L2("Постоянные усиления — покупаются один раз за тикеты.","Permanent boosts — buy once with tickets.");
   setH(el,GP_LIST.map(g=>{const own=gpHas(g.k),p=pr({price:g.price});
-    return `<div class="glass ti"><div class="ic">${g.e}</div><div class="tx"><b>${esc(L2(g.ru[0],g.en[0]))}</b><span>${esc(L2(g.ru[1],g.en[1]))}</span></div><button data-gp="${g.k}" ${own||(S.gem||0)<p?"disabled":""}>${own?L2("Куплен","Owned"):"💎 "+fmt(p)}</button></div>`}).join(""));
+    return `<div class="glass ti"><div class="ic">${g.e}</div><div class="tx"><b>${esc(L2(g.ru[0],g.en[0]))}</b><span>${esc(L2(g.ru[1],g.en[1]))}</span></div><button data-gp="${g.k}" class="${own?"own":""}" ${own||(S.gem||0)<p?"disabled":""}>${own?L2("Куплен","Owned"):"💎 "+fmt(p)}</button></div>`}).join(""));
 }
 $("shp").addEventListener("click",e=>{
   const b=e.target.closest("[data-gp]");if(!b||b.disabled||!ready||busy)return;
@@ -3139,4 +3140,44 @@ button:disabled{filter:none!important}
 .pbox,.pbox .ac,.pbox .ti,.pbox .glass,.ti,.it,#admp,#wdp,#rwp{contain:none!important;content-visibility:visible!important;contain-intrinsic-size:auto!important}
 .pbox,.pbox *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
 .pbox .ac,.pbox .ti{transition:none!important}
+</style><style id="shopui">
+#shp{background:radial-gradient(120% 60% at 50% -8%,rgba(168,85,247,.38),transparent 62%),radial-gradient(80% 40% at 100% 0,rgba(45,212,191,.22),transparent 60%),linear-gradient(180deg,#1a1034,#0d0a1f)!important;border:1px solid rgba(180,130,255,.35)!important;padding-top:20px}
+#shp .hd{font-size:30px!important;letter-spacing:.01em;background:linear-gradient(90deg,#fff,#c9a8ff 55%,#7ee8d9);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;display:flex;align-items:center;gap:10px;filter:drop-shadow(0 4px 18px rgba(168,85,247,.45))}
+#shp .hd .ico{-webkit-text-fill-color:initial;filter:drop-shadow(0 0 10px rgba(255,200,80,.7))}
+#shp>div[style*="color:var(--mute)"]{margin-top:2px!important}
+#shbal{display:grid!important;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 4px!important}
+.bch{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:linear-gradient(160deg,rgba(255,255,255,.1),rgba(255,255,255,.02));box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 10px 26px -14px #000}
+.bch i{font-style:normal;font-size:22px;width:40px;height:40px;display:grid;place-items:center;border-radius:13px;flex:none}
+.bch i .ico,.bch i svg{width:24px;height:24px}
+.bch.c i{background:linear-gradient(145deg,#ffd75e,#ff9d2e);box-shadow:0 6px 18px -4px rgba(255,170,40,.75)}
+.bch.g i{background:linear-gradient(145deg,#6ee7ff,#8b5cf6);box-shadow:0 6px 18px -4px rgba(139,92,246,.8)}
+.bch span{min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.bch small{font:700 11px var(--fh);color:var(--mute);letter-spacing:.06em;text-transform:uppercase}
+.bch b{font:800 17px var(--fh);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#shtabs{display:flex!important;gap:4px!important;padding:4px;margin:14px 0 6px!important;border-radius:18px;background:rgba(0,0,0,.32);border:1px solid rgba(255,255,255,.08)}
+#shtabs button{flex:1;border-radius:14px!important;padding:11px 8px!important;font-size:14px!important;box-shadow:none}
+#shtabs button.alt{background:transparent!important;border:0!important;color:var(--mute)!important}
+#shtabs button:not(.alt){background:linear-gradient(135deg,#a855f7,#6366f1 55%,#2dd4bf)!important;color:#fff!important;box-shadow:0 8px 22px -8px rgba(139,92,246,.9),inset 0 1px 0 rgba(255,255,255,.35)!important}
+#shpsub,#shgsub{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.12);line-height:1.4;margin-top:10px!important}
+#pets,#gpl{display:grid;gap:12px;margin-top:12px}
+#pets .ti,#gpl .ti{position:relative;margin:0!important;padding:14px!important;border-radius:22px!important;gap:14px!important;overflow:hidden;border:1px solid rgba(255,255,255,.12)!important;background:linear-gradient(155deg,rgba(255,255,255,.09),rgba(255,255,255,.02) 60%)!important;box-shadow:0 14px 34px -18px #000,inset 0 1px 0 rgba(255,255,255,.1);animation:shIn .5s both cubic-bezier(.2,.8,.2,1)}
+#pets .ti::before,#gpl .ti::before{content:"";position:absolute;inset:0;background:radial-gradient(90% 120% at 0 0,var(--ac,#a855f7),transparent 60%);opacity:.28;pointer-events:none}
+#pets .ti::after,#gpl .ti::after{content:"";position:absolute;top:0;bottom:0;width:60px;left:-80px;background:linear-gradient(100deg,transparent,rgba(255,255,255,.14),transparent);transform:skewX(-18deg);animation:shShine 5s infinite ease-in-out;pointer-events:none}
+#pets .ti:nth-child(1),#gpl .ti:nth-child(1){--ac:#2dd4bf;animation-delay:.02s}
+#pets .ti:nth-child(2),#gpl .ti:nth-child(2){--ac:#a855f7;animation-delay:.08s}
+#pets .ti:nth-child(3),#gpl .ti:nth-child(3){--ac:#f59e0b;animation-delay:.14s}
+#pets .ti:nth-child(4),#gpl .ti:nth-child(4){--ac:#ec4899;animation-delay:.2s}
+#pets .ti:nth-child(5),#gpl .ti:nth-child(5){--ac:#38bdf8;animation-delay:.26s}
+#pets .ti:nth-child(n+6),#gpl .ti:nth-child(n+6){--ac:#f43f5e;animation-delay:.3s}
+#pets .ti .ic,#gpl .ti .ic{position:relative;z-index:1;width:58px!important;height:58px;flex:none;display:grid;place-items:center;font-size:32px!important;border-radius:18px;background:linear-gradient(145deg,color-mix(in srgb,var(--ac,#a855f7) 55%,#fff 10%),color-mix(in srgb,var(--ac,#a855f7) 30%,#000));box-shadow:0 10px 24px -8px var(--ac,#a855f7),inset 0 1px 0 rgba(255,255,255,.4);animation:shFloat 3.6s ease-in-out infinite}
+#pets .ti .tx,#gpl .ti .tx{position:relative;z-index:1}
+#pets .ti .tx b,#gpl .ti .tx b{font:800 16px var(--fh)!important}
+#pets .ti .tx span,#gpl .ti .tx span{display:block;margin-top:3px;font-size:12px!important;line-height:1.35;color:#b9b2d6!important}
+#pets .ti button,#gpl .ti button{position:relative;z-index:1;border-radius:16px!important;padding:12px 14px!important;font:800 14px var(--fh)!important;white-space:nowrap;background:linear-gradient(135deg,#ffd75e,#ff8a3d 60%,#ff4d8d)!important;color:#2a1200!important;box-shadow:0 10px 24px -8px rgba(255,120,60,.85),inset 0 1px 0 rgba(255,255,255,.55)!important}
+#pets .ti button:disabled,#gpl .ti button:disabled{background:rgba(255,255,255,.08)!important;color:var(--mute)!important;box-shadow:none!important;opacity:.7}
+#gpl .ti button.own{background:linear-gradient(135deg,#34d399,#10b981)!important;color:#022c1f!important;opacity:1;box-shadow:0 8px 22px -8px rgba(16,185,129,.8),inset 0 1px 0 rgba(255,255,255,.4)!important}
+@keyframes shIn{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes shFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-4px) rotate(2deg)}}
+@keyframes shShine{0%,55%{left:-80px}100%{left:130%}}
+@media (prefers-reduced-motion:reduce){#pets .ti,#gpl .ti,#pets .ti .ic,#gpl .ti .ic,#pets .ti::after,#gpl .ti::after{animation:none!important}}
 </style></body> </html>
