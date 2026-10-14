@@ -225,6 +225,7 @@ h1{
 #rr{font-size:12.5px;min-height:22px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
 #flash{position:fixed;inset:0;pointer-events:none;opacity:0;z-index:5;background:radial-gradient(circle,var(--fc,#fff),transparent 70%)}
 #flash.go{animation:fl .9s ease-out;will-change:opacity}
+#flash,#flash.go{display:none!important;animation:none!important;opacity:0!important}
 @keyframes fl{0%{opacity:.6}to{opacity:0}}
 
 .row{display:flex;gap:10px;margin-top:12px}
@@ -3145,6 +3146,13 @@ button:active:not(:disabled),.pbox button:active:not(:disabled),#pwrap button:ac
 button:disabled{filter:none!important}
 .pbox,.pbox .ac,.pbox .ti,.pbox .glass,.ti,.it,#admp,#wdp,#rwp{contain:none!important;content-visibility:visible!important;contain-intrinsic-size:auto!important}
 .pbox,.pbox *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+/* без бликов/миганий при нажатии на кнопки: никаких переходов opacity/filter/transform и :active/:hover-эффектов */
+button,button.alt,button:active,button:hover,button:focus{transition:none!important;animation-play-state:running}
+button:active:not(:disabled),.pbox button:active:not(:disabled),#pwrap button:active:not(:disabled),button.alt:active:not(:disabled){opacity:1!important;transform:none!important;filter:none!important}
+button:hover:not(:disabled),button.alt:hover:not(:disabled){filter:none!important;transform:none!important;opacity:1!important}
+button:disabled:active,button:disabled:hover{opacity:.38!important}
+.rbtn::after{display:none!important}
+button:focus,button:focus-visible{outline:none!important}
 .pbox .ac,.pbox .ti{transition:none!important}
 </style><style id="shopui">
 #shp{background:radial-gradient(120% 60% at 50% -8%,rgba(168,85,247,.38),transparent 62%),radial-gradient(80% 40% at 100% 0,rgba(45,212,191,.22),transparent 60%),linear-gradient(180deg,#1a1034,#0d0a1f)!important;border:1px solid rgba(180,130,255,.35)!important;padding-top:20px}
@@ -3193,19 +3201,22 @@ button:disabled{filter:none!important}
 #gpl .ti .gpb button.gift{padding:9px 12px!important;font-size:13px!important}
 #gpl .ti.vipcard{border-color:rgba(255,176,46,.55)!important;box-shadow:0 0 26px -10px rgba(255,176,46,.7)}
 #giftModal .gfrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
+#giftModal .gfrow.has{opacity:.75;cursor:default}#giftModal .gfrow .gfown{margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f}
 </style>
 <script id="vip-gift-js">(function(){"use strict";
 const T=(a,b)=>L2(a,b);
 Object.assign(SRVX,{"Нельзя дарить себе":"You can't gift to yourself","У игрока уже есть этот пасс":"The player already owns this pass","Неизвестный пасс":"Unknown pass"});
 document.body.insertAdjacentHTML("beforeend",'<div id="giftModal" class="confirm-modal"><div class="modal-box" style="text-align:left;max-width:380px"><div class="modal-title" id="gf_t" style="text-align:center"></div><div id="gf_body"></div><div class="modal-actions" style="margin-top:12px"><button class="alt" id="gf_x"></button></div></div></div>');
-let gP=null,gTo="",gBusy=0;
-const gm=()=>$("giftModal"),close=()=>{gm().classList.remove("show");gP=null;gTo="";gBusy=0};
+let gP=null,gTo="",gBusy=0,gOwn=null;
+const gm=()=>$("giftModal"),close=()=>{gm().classList.remove("show");gP=null;gTo="";gBusy=0;gOwn=null};
 function gname(g){return T(g.ru[0],g.en[0])}
+function gHas(nick,p){const k=String(nick||"").toLowerCase();if(!k||!gP)return false;if(gOwn&&gOwn.has(k))return true;if(gP.k==="vip"){if(window.VIPS&&window.VIPS[k])return true;if(p&&(p.vip===true||p.vip===1||p.vip==="1"||p.vip==="t"||p.vip==="true"))return true}return false}
+const gOwnTxt=()=>T("\u0423 \u0438\u0433\u0440\u043e\u043a\u0430 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c","Already owned");
 function drawList(q){
   q=String(q||"").trim().toLowerCase();
   const me0=me&&me.nick?me.nick.toLowerCase():"";
   const arr=(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&p.nick.toLowerCase()!==me0&&(!q||p.nick.toLowerCase().includes(q))).slice(0,40);
-  $("gf_list").innerHTML=arr.length?arr.map(p=>`<button class="alt gfrow" data-n="${esc(p.nick)}">${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${T("Никого не найдено — введи ник вручную и нажми Enter","Nobody found — type a nickname and press Enter")}</div>`;
+  $("gf_list").innerHTML=arr.length?arr.map(p=>gHas(p.nick,p)?`<button class="alt gfrow has" disabled>${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="gfown">\u2713 ${gOwnTxt()}</span></button>`:`<button class="alt gfrow" data-n="${esc(p.nick)}">${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${T("Никого не найдено — введи ник вручную и нажми Enter","Nobody found — type a nickname and press Enter")}</div>`;
 }
 function stepList(){
   const p=pr({price:gP.price});
@@ -3218,6 +3229,7 @@ function stepList(){
   $("gf_list").onclick=e=>{const b=e.target.closest("[data-n]");b&&stepConfirm(b.dataset.n)};
 }
 function stepConfirm(nick){
+  if(gHas(nick)){toast(T("\u0423 \u0438\u0433\u0440\u043e\u043a\u0430 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u044d\u0442\u043e\u0442 \u043f\u0430\u0441\u0441","The player already owns this pass"),"err");return}
   gTo=nick;const p=pr({price:gP.price});
   $("gf_t").textContent=T("Подтверди подарок","Confirm the gift");
   $("gf_body").innerHTML=`<div style="text-align:center;font-size:15px;line-height:1.7"><div style="font-size:40px">${gP.e}</div><b>${esc(gname(gP))}</b><br>${T("для","for")} <b>${esc(nick)}</b><br>${IC("gem")}<b>${fmt(p)}</b></div><div class="row"><button class="alt" id="gf_back">${T("Назад","Back")}</button><button id="gf_ok">🎁 ${T("Подарить","Gift")}</button></div>`;
@@ -3242,7 +3254,7 @@ async function send(){
     dirty=!0;render();pushSoon();
   });
   gBusy=0;ok&&(ok.disabled=!1);
-  if(r.error){toast(/Could not find|schema cache/i.test(r.error)?T("Подарки ещё не включены на сервере","Gifts are not enabled on the server yet"):srv(r.error),"err");return}
+  if(r.error){if(/\u0443\u0436\u0435 \u0435\u0441\u0442\u044c/.test(r.error)){(gOwn=gOwn||new Set).add(String(to).toLowerCase());stepList()}toast(/Could not find|schema cache/i.test(r.error)?T("Подарки ещё не включены на сервере","Gifts are not enabled on the server yet"):srv(r.error),"err");return}
   if(g.k==="vip"){window.VIPS=window.VIPS||{};window.VIPS[String(to).toLowerCase()]=1}
   close();toast(T("Подарено: ","Gifted: ")+gname(g)+" → "+to,"ok");
   window.gpChanged&&window.gpChanged(1);
@@ -3251,6 +3263,7 @@ window.gpGift=function(k){
   if(!TOKEN||!me)return toast(tr("tlogin"),"err");
   const g=GP_LIST.find(x=>x.k===k);if(!g)return;
   gP=g;gTo="";stepList();gm().classList.add("show");
+  gOwn=null;try{rpc("g2_pass_owners",{p_token:TOKEN,p_pass:g.k}).then(r=>{if(gP!==g||!r||r.error||!Array.isArray(r.data))return;gOwn=new Set(r.data.map(n=>String(n).toLowerCase()));if(!gTo&&$("gf_list"))drawList($("gf_q")?$("gf_q").value:"")})}catch(e){}
   try{(typeof TP==="undefined"||!TP.length)&&loadPlayers().then(()=>{gP&&!gTo&&$("gf_list")&&drawList($("gf_q")?$("gf_q").value:"")})}catch(e){}
 };
 $("gf_x").onclick=close;gm().onclick=e=>{e.target===gm()&&close()};
