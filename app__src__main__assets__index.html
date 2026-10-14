@@ -467,6 +467,8 @@ input:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px color-mix(
 .ti .tx b{font-weight:700}
 .ti .tx span{color:var(--mute);font-size:12px}
 .ti .tx span.l{display:block}
+#wdlist .tx>span,#rwlist .tx>span{display:block;margin-top:2px;line-height:1.35}
+#wdlist .ti,#rwlist .ti{transition:border-color .2s}
 .ti .pb{height:5px;border-radius:4px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden}
 .ti .pb i{display:block;height:100%;border-radius:4px}
 .ti button{flex:0 0 auto;padding:7px 12px;font-size:13px}
@@ -1109,7 +1111,27 @@ const rvIO=document.documentElement.classList.contains("js")?new IntersectionObs
 },{rootMargin:"0px 0px -6% 0px",threshold:.05}):null;
 if(rvIO){clearTimeout(window.__rvT);document.querySelectorAll(RVSEL).forEach(x=>rvIO.observe(x))}else document.documentElement.classList.remove("js");
 function rvKids(c){if(!rvIO)return;const seen=c._seen||(c._seen={});[...c.children].forEach((n,i)=>{if(seen[i])return;n.classList.add("rvc");n._seen=seen;n._k=i;rvIO.observe(n)})}
-const setH=(e,t)=>{if(e._h!==t){const r=rvIO&&e.dataset.rv;if(r)[...e.children].forEach(n=>rvIO.unobserve(n));e._h=t;e.innerHTML=t;if(r)rvKids(e)}};
+function morphKids(a,b){
+  const A=a.childNodes,B=b.childNodes;
+  for(let i=0;i<B.length;i++){
+    const x=A[i],y=B[i];
+    if(!x){a.appendChild(y.cloneNode(true));continue}
+    if(x.nodeType!==y.nodeType||(x.nodeType===1&&x.nodeName!==y.nodeName)){a.replaceChild(y.cloneNode(true),x);continue}
+    if(x.nodeType===3||x.nodeType===8){if(x.nodeValue!==y.nodeValue)x.nodeValue=y.nodeValue;continue}
+    for(const at of [...x.attributes]){if(!y.hasAttribute(at.name)&&!(at.name==="class"))x.removeAttribute(at.name)}
+    for(const at of [...y.attributes]){
+      if(at.name==="value"&&x===document.activeElement)continue;
+      if(at.name==="class"){const keep=[...x.classList].filter(c=>/^rv/.test(c));const nc=(at.value+" "+keep.join(" ")).trim();if(x.getAttribute("class")!==nc)x.setAttribute("class",nc);continue}
+      if(x.getAttribute(at.name)!==at.value)x.setAttribute(at.name,at.value);
+    }
+    if(x.nodeName==="INPUT"||x.nodeName==="TEXTAREA"||x.nodeName==="SELECT"){if(x!==document.activeElement&&"value"in y&&x.value!==y.value)try{x.value=y.value}catch(e){}continue}
+    morphKids(x,y);
+  }
+  while(A.length>B.length)a.removeChild(a.lastChild);
+}
+const setH=(e,t)=>{if(e._h===t)return;e._h=t;const r=rvIO&&e.dataset.rv;
+  if(!e.firstChild){e.innerHTML=t;if(r)rvKids(e);return}
+  const tp=document.createElement("template");tp.innerHTML=t;morphKids(e,tp.content);if(r)rvKids(e)};
 const NT={},RM=matchMedia("(prefers-reduced-motion:reduce)").matches;
 function setNum(id,v){let t=NT[id];if(!t){t=NT[id]={el:$(id),cur:v,to:v,from:v,t0:0,raf:0};t.el.textContent=fmt(v);return}
  if(v===t.to)return;t.to=v;
@@ -2573,7 +2595,7 @@ const stat=id=>{
   return{coins:typeof d.coins==="number"?d.coins:DEF.coins,luck:d.luck||0,inc:d.inc||0,got:Object.keys(d.found||{}).filter(k=>d.found[k]).length};
 };
 function draw(){
-  const c0=$("wdchip");if(c0){const h=`${W().ic} <b>${esc(L2(W().ru,W().en))}</b>`;if(c0._h!==h){c0._h=h;c0.innerHTML=h}}
+  const c0=$("wdchip");if(c0){const h=`${W().ic} <b>${esc(L2(W().ru,W().en))}</b>`;setH(c0,h)}
   const box=$("wdlist");if(!box)return;
   const wp=$("wdp");if(wp&&wp.style.display!=="block")return;
   const total=names(0).length;
@@ -2582,11 +2604,11 @@ function draw(){
     const btn=here?`<button disabled>${L2("Вы здесь","You are here")}</button>`
       :open?`<button data-wenter="${w.id}">${L2("Войти","Enter")}</button>`
       :`<button data-wbuy="${w.id}" ${S.coins<w.cost?"disabled":""}>🪙 ${fmt(w.cost)}</button>`;
-    const info=open?`<span>🪙 ${fmt(st.coins)} · ${L2("Удача","Luck")} ${st.luck}/${MAXLUCK} · ${L2("Доход","Income")} ${st.inc}/${MAXINC} · ${st.got}/${total}</span>`
+    const info=open?`<span>🪙 ${fmt(st.coins)} · ${L2("Удача","Luck")} ${st.luck}/${MAXLUCK} · ${L2("Доход","Income")} ${st.inc}/${MAXINC} · ${L2("Коллекция","Collection")} ${st.got}/${total}</span>`
       :`<span>${L2("Закрыт. Портал оплачивается монетами текущего мира","Locked. The portal is paid with the current world's coins")}</span>`;
     return `<div class="glass ti" style="${here?"border-color:var(--hot)":""}"><div class="ic" style="font-size:26px">${w.ic}</div><div class="tx"><b>${esc(L2(w.ru,w.en))}</b><span>${esc(L2(w.dru,w.den))}</span><span>${L2("Награды","Rewards")} ×${w.vm} · ${L2("цены апгрейдов","upgrade prices")} ×${w.cm} · ${L2("цена ролла","roll price")} ×${window.wGm(w.id)} · ${L2("монета","coin")} ${window.wCe(w.id)}</span>${info}</div>${btn}</div>`;
   }).join("");
-  if(box._h!==_h){box._h=_h;box.innerHTML=_h}
+  setH(box,_h)
 }
 const _r=render;render=function(){const r=_r.apply(this,arguments);try{draw()}catch(e){}return r};
 $("wdb").onclick=()=>{const pw=$("wdp");pw.style.display="block";draw();openPanel("wdp")};
@@ -2632,7 +2654,7 @@ function draw(){
   let h=`<div class="glass ti"><div class="ic" style="font-size:26px">🎁</div><div class="tx"><b>${L2("Награда дня","Daily reward")}</b><span>${L2("Серия: ","Streak: ")}${S.dl?S.dl.s||0:0}/7 · ${L2("на 7-й день +1 💎","day 7 gives +1 💎")}</span></div><button data-d="1" ${dailyOk()?"":"disabled"}>${dailyOk()?L2("Забрать","Claim"):"✓"}</button></div>`;
   h+=TK.map((k,i)=>{const p=prog(t,i),ok=p>=k.n;return`<div class="glass ti"><div class="ic" style="font-size:22px">📋</div><div class="tx"><b>${L2(k.ru,k.en)}</b><span>${p}/${k.n}</span></div><button data-t="${i}" ${t.c[i]||!ok?"disabled":""}>${t.c[i]?"✓":L2("Забрать","Claim")}</button></div>`}).join("");
   h+=`<div class="glass ti"><div class="ic" style="font-size:26px">♻️</div><div class="tx"><b>${L2("Перерождение","Rebirth")} ×${S.pr||0}</b><span>${L2("Нужно: удача и доход на максимуме. Даёт +10% к доходу навсегда. Сейчас: +","Needs max luck and income. +10% income forever. Now: +")}${(S.pr||0)*10}%</span></div><button data-p="1" ${prOk()?"":"disabled"}>${L2("Родиться","Rebirth")}</button></div>`;
-  if($("rwlist")._h!==h){$("rwlist")._h=h;$("rwlist").innerHTML=h}}
+  setH($("rwlist"),h)}
 function build(){
   const wp=$("wdp"),wb=$("wdb");if(!wp||!wb||$("rwp"))return;
   const p=document.createElement("div");p.id="rwp";p.className=wp.className;p.style.cssText="display:none;text-align:left";
