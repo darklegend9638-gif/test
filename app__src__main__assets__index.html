@@ -1074,6 +1074,7 @@ async function adminSync(){if(!TOKEN||!ready||document.hidden||busy)return;await
 if(typeof S._pc=="number"&&sc!==S._pc&&(sv.w||0)===(S.w||0)){S.coins=Math.max(0,S.coins+sc-S._pc);ch=1}S._pc=sc;
 if(_pg!==null&&sg!==_pg){S.gem=Math.max(0,(S.gem||0)+sg-_pg);ch=1}_pg=sg;
 const so=snapO(sv);if(_lastO!==null&&so!==_lastO&&so!==snapO(S)){if(dirty||_ops>1||(sv.w||0)!==(S.w||0)){_lastO=so;return}S.luck=Math.min(MAXLUCK,Math.max(S.luck||0,+sv.luck||0));S.inc=Math.min(MAXINC,Math.max(S.inc||0,+sv.inc||0));if(typeof sv.best=="number")S.best=sv.best;S.tb=Array.isArray(sv.tb)?sv.tb:S.tb;S.pt=Array.isArray(sv.pt)?sv.pt:S.pt;for(const k in sv.found||{})S.found[k]=Math.max(S.found[k]||0,sv.found[k]);ch=1}_lastO=so;
+if(sv.gp&&typeof sv.gp=="object"){let gc=0;for(const k in sv.gp){if(sv.gp[k]&&!gpHas(k)){(S.gp||(S.gp={}))[k]=1;gc=1}}if(gc){ch=1;setTimeout(()=>{window.gpChanged&&window.gpChanged(1)},0)}}
 if(ch){if(sv._v!=null)S._v=sv._v;dirty=!0;render();pushSoon()}})}
 setInterval(__one(()=>{if(!document.hidden)return adminSync()}),2500),document.addEventListener("visibilitychange",()=>{document.hidden||adminSync()});
 setInterval(__one(()=>{if(!document.hidden)return push()}),1000),document.addEventListener("visibilitychange",()=>{document.hidden?push(!0):push()}),addEventListener("pagehide",()=>push(!0));/* ==========================================================================================
@@ -2485,7 +2486,7 @@ $("shp").addEventListener("click",e=>{
   const b=e.target.closest("[data-gp]");if(!b||b.disabled||!ready||busy)return;
   const g=GP_LIST.find(x=>x.k===b.dataset.gp);if(!g||gpHas(g.k))return;
   const p=pr({price:g.price});if((S.gem||0)<p)return toast(L2("Не хватает тикетов","Not enough tickets"),"err");
-  S.gem-=p;(S.gp||(S.gp={}))[g.k]=1;render();save();pushSoon();renderShop();
+  S.gem-=p;(S.gp||(S.gp={}))[g.k]=1;render();save();pushSoon();renderShop();window.gpChanged&&window.gpChanged(1);
   toast(L2("Куплен геймпасс: ","Game pass bought: ")+L2(g.ru[0],g.en[0]),"ok");
 });
 /* настройки в профиле: звук, музыка, выход */
@@ -3227,11 +3228,23 @@ async function send(){
   const g=gP,to=gTo,p=pr({price:g.price});
   if((S.gem||0)<p){toast(T("Не хватает тикетов","Not enough tickets"),"err");return}
   gBusy=1;const ok=$("gf_ok");ok&&(ok.disabled=!0);
-  const r=await serial(async()=>{await trFlush();return await rpc("g2_gift_pass",{p_token:TOKEN,p_to:to,p_pass:g.k})});
+  let r={error:"?"};
+  await serial(async()=>{
+    await trFlush();
+    r=await rpc("g2_gift_pass",{p_token:TOKEN,p_to:to,p_pass:g.k});
+    if(r.error)return;
+    const d=r.data||{};
+    /* сервер вернул остаток тикетов и новую версию — ставим сразу, без двойного списания */
+    if(d.gem!=null&&isFinite(+d.gem)){S.gem=Math.max(0,Math.floor(+d.gem));_pg=S.gem}
+    else{S.gem=Math.max(0,(S.gem||0)-p)}
+    if(d.v!=null)S._v=d.v;
+    dirty=!0;render();pushSoon();
+  });
   gBusy=0;ok&&(ok.disabled=!1);
   if(r.error){toast(/Could not find|schema cache/i.test(r.error)?T("Подарки ещё не включены на сервере","Gifts are not enabled on the server yet"):srv(r.error),"err");return}
-  S.gem=Math.max(0,(S.gem||0)-p);render();save();pushSoon();
+  if(g.k==="vip"){window.VIPS=window.VIPS||{};window.VIPS[String(to).toLowerCase()]=1}
   close();toast(T("Подарено: ","Gifted: ")+gname(g)+" → "+to,"ok");
+  window.gpChanged&&window.gpChanged(1);
 }
 window.gpGift=function(k){
   if(!TOKEN||!me)return toast(tr("tlogin"),"err");
@@ -3241,6 +3254,17 @@ window.gpGift=function(k){
 };
 $("gf_x").onclick=close;gm().onclick=e=>{e.target===gm()&&close()};
 addEventListener("keydown",e=>{e.key==="Escape"&&gm().classList.contains("show")&&close()});
+/* единая точка «пассы поменялись»: сразу обновляем магазин, топ, списки и VIP-тег */
+window.gpChanged=function(srvSync){
+  try{if(me&&me.nick){window.VIPS=window.VIPS||{};const k=String(me.nick).toLowerCase();if(gpHas("vip"))window.VIPS[k]=1;else delete window.VIPS[k]}}catch(e){}
+  try{const sp=$("shp");sp&&sp.style.display==="block"&&renderShop()}catch(e){}
+  try{typeof TOPD!=="undefined"&&TOPD&&typeof drawTop==="function"&&drawTop()}catch(e){}
+  try{typeof drawPl==="function"&&drawPl()}catch(e){}
+  try{gP&&!gTo&&$("gf_list")&&drawList($("gf_q")?$("gf_q").value:"")}catch(e){}
+  try{typeof drBtn==="function"&&drBtn()}catch(e){}
+  if(srvSync)setTimeout(()=>{window.vipLoad&&window.vipLoad(1)},1500);
+};
+try{const _ad=adopt;adopt=function(){const r=_ad.apply(this,arguments);setTimeout(()=>{window.gpChanged&&window.gpChanged()},0);return r}}catch(e){}
 /* входящие подарки (как g2_claim для монет) */
 let gcOff=0,gcBusy=0;
 async function gcClaim(){
@@ -3251,17 +3275,18 @@ async function gcClaim(){
     const list=(r.data&&Array.isArray(r.data.gifts)?r.data.gifts:[]);let ch=0;
     list.forEach(x=>{const g=GP_LIST.find(q=>q.k===(x&&x.pass));if(!g)return;(S.gp||(S.gp={}))[g.k]=1;ch=1;
       toast("🎁 "+T("Вам подарили: ","You received: ")+gname(g)+(x.from?" ("+x.from+")":""),"ok")});
-    if(ch){dirty=!0;render();save();pushSoon()}
+    if(ch){if(r.data&&r.data.v!=null)S._v=r.data.v;dirty=!0;render();save();pushSoon();window.gpChanged&&window.gpChanged(1)}
   })}finally{gcBusy=0}
 }
-setInterval(gcClaim,4000);setTimeout(gcClaim,3000);
+setInterval(gcClaim,2500);setTimeout(gcClaim,1500);
 document.addEventListener("visibilitychange",()=>{document.hidden||gcClaim()});
 })();</script>
 <script id="vip-list-js">(function(){"use strict";
 window.VIPS=window.VIPS||{};var off=0,at=0,busy=0;
 window.vipLoad=async function(force){
-  if(busy||Date.now()<off||(!force&&Date.now()-at<20000))return;
-  if(Date.now()-at<4000)return;
+  var hot=0;try{hot=document.getElementById("topp").style.display==="block"||document.getElementById("shp").style.display==="block"||document.getElementById("giftModal").classList.contains("show")}catch(e){}
+  if(busy||Date.now()<off||(!force&&Date.now()-at<(hot?6000:25000)))return;
+  if(Date.now()-at<1200)return;
   busy=1;
   try{
     var r=await rpc("g2_vip_list",{});
@@ -3275,7 +3300,7 @@ window.vipLoad=async function(force){
   }finally{busy=0}
 };
 setTimeout(function(){window.vipLoad(1)},1500);
-setInterval(function(){document.hidden||window.vipLoad()},30000);
+setInterval(function(){document.hidden||window.vipLoad()},4000);
 document.addEventListener("visibilitychange",function(){document.hidden||window.vipLoad()});
 var tb=document.getElementById("topBtn");tb&&tb.addEventListener("click",function(){window.vipLoad(1)});
 /* вспышка редкости: после окончания (или отмены при display:none) снимаем .go,
