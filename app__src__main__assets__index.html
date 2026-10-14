@@ -3127,4 +3127,12 @@ var lastB=null,lastT=0;
 document.addEventListener("click",function(e){var b=e.target.closest&&e.target.closest("#pwrap button,.confirm-modal button");if(!b||b.classList.contains("pclose"))return;
 var n=Date.now();if((b===lastB&&n-lastT<300)||n-lastT<120){e.stopImmediatePropagation();e.preventDefault();return}lastB=b;lastT=n},true);
 }catch(x){}})();</script>
-</body> </html>
+<style id="fixflick">
+/* антимигание: убираем масштабирование/фильтры у кнопок и вложенные слои в панелях */
+button,button.alt{transition:box-shadow .2s,border-color .2s,background .2s,opacity .12s!important;will-change:auto!important;-webkit-backface-visibility:visible!important;backface-visibility:visible!important}
+button:active:not(:disabled),.pbox button:active:not(:disabled),#pwrap button:active:not(:disabled){transform:none!important;filter:none!important;opacity:.82}
+button:disabled{filter:none!important}
+.pbox,.pbox .ac,.pbox .ti,.pbox .glass,.ti,.it,#admp,#wdp,#rwp{contain:none!important;content-visibility:visible!important;contain-intrinsic-size:auto!important}
+.pbox,.pbox *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}
+.pbox .ac,.pbox .ti{transition:none!important}
+</style></body> </html>
