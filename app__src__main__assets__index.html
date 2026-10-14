@@ -3263,6 +3263,7 @@ window.gpChanged=function(srvSync){
   try{typeof drawPl==="function"&&drawPl()}catch(e){}
   try{gP&&!gTo&&$("gf_list")&&drawList($("gf_q")?$("gf_q").value:"")}catch(e){}
   try{typeof drBtn==="function"&&drBtn()}catch(e){}
+  try{typeof renderProf==="function"&&me&&renderProf()}catch(e){}
   if(srvSync)setTimeout(()=>{window.vipLoad&&window.vipLoad(1)},1500);
 };
 try{const _ad=adopt;adopt=function(){const r=_ad.apply(this,arguments);setTimeout(()=>{window.gpChanged&&window.gpChanged()},0);return r}}catch(e){}
