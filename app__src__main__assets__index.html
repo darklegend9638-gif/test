@@ -2220,7 +2220,7 @@ return `<div class="glass ti"><div class="tx"><b>${who}</b><span class="l">🎁 
 const _ta=trAct;trAct=async function(kind,id){const x=((trData&&trData.incoming)||[]).find(o=>o.id===id),g=kind==="ok"&&x&&isGift(x)&&!bp().pr,before=S.gem||0;await _ta(kind,id);
 if(g&&(S.gem||0)-before>=PREM&&!bp().pr){S.gem=Math.max(0,S.gem-PREM);bp().pr=1;render();save();pushSoon();draw();lab();toast(L2("🎁 Премиум батлпасс получен в подарок!","🎁 Premium battle pass received as a gift!"),"ok")}};
 const gb=document.createElement("div");gb.id="bpgift";gb.className="glass";gb.style.cssText="padding:12px;margin-bottom:8px";
-gb.innerHTML=`<div style="font-weight:800;margin-bottom:6px">🎁 <span id="bpg_t"></span></div><div class="row"><button class="alt" id="bpg_pick" style="flex:1;min-width:0;display:flex;align-items:center;gap:8px;text-align:left;overflow:hidden;white-space:nowrap"></button><button id="bpg_b" style="flex:none"></button></div><div id="bpg_list" style="display:none;max-height:230px;overflow:auto;margin-top:8px;gap:6px;flex-direction:column"></div><div id="bpg_s" style="font-size:12px;color:var(--mute);margin-top:6px"></div>`;
+gb.innerHTML=`<div style="font-weight:800;margin-bottom:6px">🎁 <span id="bpg_t"></span></div><button class="alt" id="bpg_pick" style="width:100%;display:flex;align-items:center;gap:8px;text-align:left;overflow:hidden;white-space:nowrap;min-height:48px"></button><button id="bpg_b" style="width:100%;margin-top:8px;white-space:normal;min-height:46px"></button><div id="bpg_list" style="display:none;max-height:230px;overflow:auto;margin-top:8px;gap:6px;flex-direction:column"></div><div id="bpg_s" style="font-size:12px;color:var(--mute);margin-top:6px"></div>`;
 $("bpp").insertBefore(gb,$("bplist"));
 let bpOwn=null,bpOwnAt=0,bpOwnWarn=0,bpSel="",bpOpen=false,_gk="",_pk="",_lk="";
 async function bpLoadOwn(){if(!TOKEN||!me||document.hidden||Date.now()-bpOwnAt<8e3)return;bpOwnAt=Date.now();try{const r=await rpc("g2_bp_owners",{p_token:TOKEN,p_season:sid()});if(!r.error&&Array.isArray(r.data)){bpOwn=new Set(r.data.map(n=>String(n).toLowerCase()));gTxt()}else if(r.error&&/Could not find|schema cache/i.test(r.error)){bpOwn=null;if(!bpOwnWarn){bpOwnWarn=1;console.warn("g2_bp_owners не найдена: выполни sql/15_bp_owners.sql");try{isOwner&&toast("SQL 15_bp_owners.sql не выполнен — блокировка подарка не работает","err")}catch(e){}}}}catch(e){}}
@@ -2233,10 +2233,10 @@ b.textContent=has?"✓ "+L2("Уже есть","Already owned"):L2("Подари�
 st.textContent=has?L2("У игрока уже есть премиум батлпасс","The player already has the premium battle pass"):L2("Друг увидит подарок во входящих обменах и получит премиум после принятия.","Your friend will see the gift in incoming trades and get premium once they accept.");st.style.color=has?"#34d399":""}
 b.disabled=has;
 const sp=bpSel?bpPl().find(p=>p.nick===bpSel):null,k2=LANG+"|"+bpSel+"|"+(bpOpen?1:0)+"|"+(sp?sp.avatar:"");
-if(k2!==_pk){_pk=k2;pk.innerHTML=(bpSel?(sp?avH(sp.avatar)+" ":"")+"<b style=\"overflow:hidden;text-overflow:ellipsis\">"+esc(bpSel)+"</b>"+(sp?vipTag(sp):""):"<span style=\"color:var(--mute)\">"+L2("Выбрать игрока","Choose a player")+"</span>")+"<span style=\"margin-left:auto;flex:none;color:var(--mute)\">"+(bpOpen?"▴":"▾")+"</span>"}
+if(k2!==_pk){_pk=k2;pk.innerHTML=(bpSel?avW(bpSel,sp?sp.avatar:"")+" "+"<b style=\"overflow:hidden;text-overflow:ellipsis\">"+esc(bpSel)+"</b>"+(sp?vipTag(sp):""):"<span style=\"color:var(--mute)\">"+L2("Выбрать игрока","Choose a player")+"</span>")+"<span style=\"margin-left:auto;flex:none;color:var(--mute)\">"+(bpOpen?"▴":"▾")+"</span>";try{avWatch(pk)}catch(e){}}
 const ls=$("bpg_list");ls.style.display=bpOpen?"flex":"none";
 if(bpOpen){const pl=bpPl(),k3=pl.map(p=>p.nick+(bpHas(p.nick)?"!":"")+(p.nick===bpSel?"*":"")).join("|")+LANG;
-if(k3!==_lk){_lk=k3;ls.innerHTML=pl.length?pl.map(p=>bpHas(p.nick)?`<button class="alt" disabled style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span style="margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f">✓ ${L2("Уже есть","Owned")}</span></button>`:`<button class="alt${p.nick===bpSel?" sel":""}" data-bpn="${esc(p.nick)}" style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${L2("Игроков пока нет","No players yet")}</div>`;try{avWatch(ls)}catch(e){}}}else _lk=""}
+if(k3!==_lk){_lk=k3;ls.innerHTML=pl.length?pl.map(p=>bpHas(p.nick)?`<button class="alt" disabled style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span style="margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f">✓ ${L2("Уже есть","Owned")}</span></button>`:`<button class="alt${p.nick===bpSel?" sel":""}" data-bpn="${esc(p.nick)}" style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${L2("Игроков пока нет","No players yet")}</div>`;try{avWatch(ls)}catch(e){}}}else _lk=""}
 const bpMark=gTxt;
 $("bpg_pick").onclick=()=>{bpOpen=!bpOpen;if(bpOpen){_lk="";try{loadPlayers().then(()=>{_lk="";gTxt()})}catch(e){}bpLoadOwn()}gTxt()};
 $("bpg_list").onclick=e=>{const b=e.target.closest("[data-bpn]");if(!b||b.disabled)return;bpSel=b.dataset.bpn;bpOpen=false;gTxt()};
@@ -3232,7 +3232,8 @@ function drawList(q){
   q=String(q||"").trim().toLowerCase();
   const me0=me&&me.nick?me.nick.toLowerCase():"";
   const arr=(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&p.nick.toLowerCase()!==me0&&(!q||p.nick.toLowerCase().includes(q))).slice(0,40);
-  $("gf_list").innerHTML=arr.length?arr.map(p=>gHas(p.nick,p)?`<button class="alt gfrow has" disabled>${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="gfown">\u2713 ${gOwnTxt()}</span></button>`:`<button class="alt gfrow" data-n="${esc(p.nick)}">${avH(p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${T("Никого не найдено — введи ник вручную и нажми Enter","Nobody found — type a nickname and press Enter")}</div>`;
+  $("gf_list").innerHTML=arr.length?arr.map(p=>gHas(p.nick,p)?`<button class="alt gfrow has" disabled>${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="gfown">\u2713 ${gOwnTxt()}</span></button>`:`<button class="alt gfrow" data-n="${esc(p.nick)}">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${T("Никого не найдено — введи ник вручную и нажми Enter","Nobody found — type a nickname and press Enter")}</div>`;
+  try{avWatch($("gf_list"))}catch(e){}
 }
 function stepList(){
   const p=pr({price:gP.price});
@@ -3248,8 +3249,8 @@ function stepConfirm(nick){
   if(gHas(nick)){toast(T("\u0423 \u0438\u0433\u0440\u043e\u043a\u0430 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u044d\u0442\u043e\u0442 \u043f\u0430\u0441\u0441","The player already owns this pass"),"err");return}
   gTo=nick;const p=pr({price:gP.price});
   $("gf_t").textContent=T("Подтверди подарок","Confirm the gift");
-  $("gf_body").innerHTML=`<div style="text-align:center;font-size:15px;line-height:1.7"><div style="font-size:40px">${gP.e}</div><b>${esc(gname(gP))}</b><br>${T("для","for")} <b>${esc(nick)}</b><br>${IC("gem")}<b>${fmt(p)}</b></div><div class="row"><button class="alt" id="gf_back">${T("Назад","Back")}</button><button id="gf_ok">🎁 ${T("Подарить","Gift")}</button></div>`;
-  $("gf_back").onclick=stepList;$("gf_ok").onclick=send;
+  $("gf_body").innerHTML=`<div style="text-align:center;font-size:15px;line-height:1.7"><div style="font-size:40px">${gP.e}</div><b>${esc(gname(gP))}</b><br>${T("для","for")} <b style="display:inline-flex;align-items:center;gap:6px">${avW(nick,(TP.find(x=>x&&x.nick===nick)||{}).avatar)} ${esc(nick)}</b><br>${IC("gem")}<b>${fmt(p)}</b></div><div class="row"><button class="alt" id="gf_back">${T("Назад","Back")}</button><button id="gf_ok">🎁 ${T("Подарить","Gift")}</button></div>`;
+  $("gf_back").onclick=stepList;$("gf_ok").onclick=send;try{avWatch($("gf_body"))}catch(e){}
 }
 async function send(){
   if(gBusy||!gP||!gTo)return;
