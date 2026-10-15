@@ -2182,7 +2182,44 @@ if(pref!=="0"){try{start()}catch(e){}}
 document.addEventListener("visibilitychange",function(){if(!ctx)return;try{document.hidden?ctx.suspend():on&&ctx.resume()}catch(e){}});
 {const _sl=setLang;setLang=function(e){_sl(e);lab()}}
 lab();
-})();</script> <script>
+})();</script> <script id="gift-extras-js">(function(){"use strict";
+const L=(a,b)=>L2(a,b);
+/* избранные игроки (хранятся на устройстве, отдельно для каждого аккаунта) */
+let _fav=null,_favK="";
+const favKey=()=>(typeof GPX!=="undefined"?GPX:"g2-")+"fav-"+(me&&me.nick?String(me.nick).toLowerCase():"");
+function favSet(){const k=favKey();if(_fav&&_favK===k)return _fav;_favK=k;try{_fav=new Set(JSON.parse(localStorage.getItem(k)||"[]"))}catch(e){_fav=new Set}return _fav}
+window.ppIsFav=n=>favSet().has(String(n).toLowerCase());
+window.ppFavSig=()=>[...favSet()].sort().join(",");
+window.ppToggleFav=n=>{const s=favSet(),k=String(n).toLowerCase();s.has(k)?s.delete(k):s.add(k);try{localStorage.setItem(favKey(),JSON.stringify([...s]))}catch(e){}};
+/* единый список игроков для магазина и батлпасса: избранные сверху, «✓ Уже есть», ★ в строке */
+window.ppList=(players,o)=>{o=o||{};const sel=o.sel||"",has=o.has||(()=>false),attr=o.attr||"data-n";
+const arr=players.slice().sort((a,b)=>(+ppIsFav(b.nick))-(+ppIsFav(a.nick)));
+if(!arr.length)return `<div style="color:var(--mute);font-size:13px;padding:6px">${L("Никого не найдено","Nobody found")}</div>`;
+return arr.map(p=>{if(has(p))return `<button class="alt ppi has" disabled>${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="ppown">✓ ${L("Уже есть","Owned")}</span></button>`;
+const f=ppIsFav(p.nick);return `<button class="alt ppi${p.nick===sel?" sel":""}" ${attr}="${esc(p.nick)}">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="ppfav${f?" on":""}" data-fav="${esc(p.nick)}" role="button" aria-label="${L("В избранное","Favorite")}">${f?"★":"☆"}</span></button>`}).join("")};
+/* сообщение к подарку (до 60 символов) */
+window.gNote=async(to,kind,msg)=>{msg=String(msg||"").trim().slice(0,60);if(!msg||!TOKEN)return;try{await rpc("g2_gift_note",{p_token:TOKEN,p_to:to,p_kind:kind,p_msg:msg})}catch(e){}};
+window.gMsgInput=id=>`<input id="${id}" class="gmsg" maxlength="60" autocomplete="off" placeholder="${L("Сообщение к подарку (необязательно)","Gift message (optional)")}">`;
+/* история подарков */
+document.body.insertAdjacentHTML("beforeend",'<div id="gHist" class="confirm-modal"><div class="modal-box" style="text-align:left;max-width:400px"><div class="modal-title" id="gh_t" style="text-align:center"></div><div id="gh_body" style="max-height:60vh;overflow:auto"></div><div class="modal-actions" style="margin-top:12px"><button class="alt" id="gh_x"></button></div></div></div>');
+const hm=()=>document.getElementById("gHist"),hb=()=>document.getElementById("gh_body");
+const ST={pending:["Ожидает","Pending"],done:["Получен","Received"],declined:["Отклонён","Declined"],cancelled:["Отменён","Cancelled"],expired:["Истёк","Expired"]};
+const gName=r=>{if(r.kind==="bp")return "⭐ "+L("Премиум батлпасса","Premium battle pass");const g=(typeof GP_LIST!=="undefined"?GP_LIST:[]).find(x=>x.k===r.pass);return g?g.e+" "+L(g.ru[0],g.en[0]):String(r.pass||"")};
+function hDraw(list){const b=hb();if(!list.length){b.innerHTML=`<div style="color:var(--mute);padding:10px;text-align:center">${L("Подарков пока нет","No gifts yet")}</div>`;return}
+b.innerHTML=list.map((r,i)=>{const st=ST[r.status]||[r.status,r.status],d=new Date((+r.ts||0)*1e3).toLocaleDateString(LANG==="en"?"en":"ru",{day:"2-digit",month:"short"});
+return `<div class="hrow"><span style="font-size:22px">${r.dir==="out"?"📤":"📥"}</span><div class="hm"><b>${esc(gName(r))}</b><br>${r.dir==="out"?L("Кому: ","To: "):L("От: ","From: ")}<b>${esc(r.nick||"?")}</b><div class="hs">${d} · ${L(st[0],st[1])}</div>${r.msg?`<i>«${esc(r.msg)}»</i>`:""}</div>${r.dir==="out"&&r.nick?`<button class="alt" data-again="${i}" title="${L("Подарить ещё раз","Gift again")}">↻</button>`:""}</div>`}).join("");
+b.onclick=e=>{const a=e.target.closest("[data-again]");if(!a)return;const r=list[+a.dataset.again];if(!r)return;hm().classList.remove("show");
+if(r.kind==="bp"){window.bpGiftTo&&window.bpGiftTo(r.nick)}else{window.gpGift&&window.gpGift(r.pass,r.nick)}}}
+window.gHistOpen=async()=>{if(!TOKEN||!me)return toast(L("Войдите в аккаунт","Sign in first"),"err");
+document.getElementById("gh_t").textContent="📜 "+L("История подарков","Gift history");document.getElementById("gh_x").textContent=L("Закрыть","Close");
+hb().innerHTML=`<div style="color:var(--mute);padding:10px;text-align:center">…</div>`;hm().classList.add("show");
+const r=await rpc("g2_gift_history",{p_token:TOKEN});
+if(r.error){hb().innerHTML=`<div style="color:var(--mute);padding:10px;text-align:center">${/Could not find|schema cache/i.test(r.error)?L("История ещё не включена на сервере","History is not enabled on the server yet"):esc(srv(r.error))}</div>`;return}
+hDraw(Array.isArray(r.data)?r.data:[])};
+document.getElementById("gh_x").onclick=()=>hm().classList.remove("show");
+hm().onclick=e=>{e.target===hm()&&hm().classList.remove("show")};
+})();</script>
+<script>
 (function(){
 const IB='<svg class="ico"><use href="#i-bp"/></svg>',IP='<svg class="ico"><use href="#i-bpp"/></svg>',LV=30,PREM=300,xpNeed=i=>350+75*i,cum=l=>{let t=0;for(let i=0;i<l;i++)t+=xpNeed(i);return t},
 XPT={roll:2,x10:5,fuse:15,up:25,gem:10,rare:1,epic:3,leg:10},
@@ -2200,7 +2237,7 @@ function claim(i,p){const b=bp(),L=i+1;if(lvl()<L||(p&&!b.pr))return null;const 
 function pending(){if(!ready)return 0;const b=bp(),l=lvl();let n=0;for(let i=0;i<l;i++){if(!(b.c&(1<<i)))n++;if(b.pr&&!(b.p&(1<<i)))n++}return n}
 let sig="";
 function draw(){const b=bp(),l=lvl(),t=LANG==="en",end=new Date(new Date().getFullYear(),new Date().getMonth()+1,1)-Date.now(),cur=b.xp-cum(l),pc=l>=LV?100:cur/xpNeed(l)*100,pn=pending();
-{const _a=IB+L2("Батлпасс · сезон ","Battle pass · season ")+snum(),_b=sname()+" · "+L2("до конца ","ends in ")+fmtT(Math.max(0,Math.floor(end/1e3)));const A=$("bphd"),B=$("bpsub");if(A.__h!==_a){A.__h=_a;A.innerHTML=_a}if(B.__h!==_b){B.__h=_b;B.textContent=_b}}
+{const _a=IB+L2("Батлпасс · сезон ","Battle pass · season ")+snum(),_b=sname()+" · "+L2("до конца ","ends in ")+fmtT(Math.max(0,Math.floor(end/1e3)));const A=$("bphd"),B=$("bpsub");if(A.__h!==_a){A.__h=_a;A.innerHTML=_a}if(B.__h!==_b){B.__h=_b;B.textContent=_b}B.style.color=end<3*864e5?"#ff6b6b":""}
 let h=`<div class="glass" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-weight:800"><span>${L2("Уровень","Level")} ${l}/${LV}</span><span style="color:var(--mute);font-size:13px">${l>=LV?"MAX":fmt(cur)+" / "+xpNeed(l)+" XP"}</span></div><div class="pb"><i style="width:${pc}%;background:var(--c4)"></i></div><div style="color:var(--mute);font-size:12px;margin-top:6px">${L2("XP: ролл +2, слияние +15, прокачка +25, тикет +10, редкие предметы","XP: roll +2, fusion +15, upgrade +25, ticket +10, rare items")}</div><div class="row" style="margin-top:8px">${b.pr?`<span style="flex:1;color:#ffb02e;font-weight:800">${IP} ${L2("Премиум активен","Premium active")}</span>`:`<button data-bpbuy="1" ${S.gem>=PREM?"":"disabled"}>${IP} ${L2("Премиум","Premium")} · 💎 ${PREM}</button>`}<button class="alt" data-bpall="1" ${pn?"":"disabled"}>${L2("Забрать всё","Claim all")}${pn?" ("+pn+")":""}</button></div></div>`;
 for(let i=0;i<LV;i++){const L=i+1,ok=l>=L,f=rw(L,0),p=rw(L,1),fc=b.c&(1<<i),pcl=b.p&(1<<i),bs='style="padding:6px 10px;font-size:12px;min-width:84px"';
 h+=`<div class="glass ti ${ok?"":"off"}"><div class="ic" style="font:800 18px var(--fh)">${L}</div><div class="tx"><b>${rt(f)}${L===LV?" · "+IB:""}</b><span style="color:#ffb02e">${IP} ${rt(p)}${L===LV?" · "+IP:""}</span></div><div style="display:flex;flex-direction:column;gap:4px;flex:none"><button data-bpc="${i}|0" ${bs} ${ok&&!fc?"":"disabled"}>${fc?"✓":ok?L2("Забрать","Claim"):"🔒"}</button><button class="alt" data-bpc="${i}|1" ${bs} ${ok&&b.pr&&!pcl?"":"disabled"}>${pcl?"✓":ok&&b.pr?L2("Забрать","Claim"):IP}</button></div></div>`}
@@ -2220,12 +2257,12 @@ return `<div class="glass ti"><div class="tx"><b>${who}</b><span class="l">🎁 
 const _ta=trAct;trAct=async function(kind,id){const x=((trData&&trData.incoming)||[]).find(o=>o.id===id),g=kind==="ok"&&x&&isGift(x)&&!bp().pr,before=S.gem||0;await _ta(kind,id);
 if(g&&(S.gem||0)-before>=PREM&&!bp().pr){S.gem=Math.max(0,S.gem-PREM);bp().pr=1;render();save();pushSoon();draw();lab();toast(L2("🎁 Премиум батлпасс получен в подарок!","🎁 Premium battle pass received as a gift!"),"ok")}};
 const gb=document.createElement("div");gb.id="bpgift";gb.className="glass";gb.style.cssText="padding:12px;margin-bottom:8px";
-gb.innerHTML=`<div style="font-weight:800;margin-bottom:6px">🎁 <span id="bpg_t"></span></div><button class="alt" id="bpg_pick" style="width:100%;display:flex;align-items:center;gap:8px;text-align:left;overflow:hidden;white-space:nowrap;min-height:48px"></button><button id="bpg_b" style="width:100%;margin-top:8px;white-space:normal;min-height:46px"></button><div id="bpg_list" style="display:none;max-height:230px;overflow:auto;margin-top:8px;gap:6px;flex-direction:column"></div><div id="bpg_s" style="font-size:12px;color:var(--mute);margin-top:6px"></div>`;
+gb.innerHTML=`<div style="font-weight:800;margin-bottom:6px">🎁 <span id="bpg_t"></span></div><button class="alt" id="bpg_pick" style="width:100%;display:flex;align-items:center;gap:8px;text-align:left;overflow:hidden;white-space:nowrap;min-height:48px"></button>${gMsgInput("bpg_msg")}<button id="bpg_b" style="width:100%;margin-top:8px;white-space:normal;min-height:46px"></button><div id="bpg_list" style="display:none;max-height:230px;overflow:auto;margin-top:8px;gap:6px;flex-direction:column"></div><div id="bpg_s" style="font-size:12px;color:var(--mute);margin-top:6px"></div><button class="alt" id="bpg_h" style="width:100%;margin-top:8px">📜 ${L2("История подарков","Gift history")}</button>`;
 $("bpp").insertBefore(gb,$("bplist"));
 let bpOwn=null,bpOwnAt=0,bpOwnWarn=0,bpSel="",bpOpen=false,_gk="",_pk="",_lk="";
 async function bpLoadOwn(){if(!TOKEN||!me||document.hidden||Date.now()-bpOwnAt<8e3)return;bpOwnAt=Date.now();try{const r=await rpc("g2_bp_owners",{p_token:TOKEN,p_season:sid()});if(!r.error&&Array.isArray(r.data)){bpOwn=new Set(r.data.map(n=>String(n).toLowerCase()));gTxt()}else if(r.error&&/Could not find|schema cache/i.test(r.error)){bpOwn=null;if(!bpOwnWarn){bpOwnWarn=1;console.warn("g2_bp_owners не найдена: выполни sql/15_bp_owners.sql");try{isOwner&&toast("SQL 15_bp_owners.sql не выполнен — блокировка подарка не работает","err")}catch(e){}}}}catch(e){}}
 const bpHas=n=>!!(n&&bpOwn&&bpOwn.has(String(n).trim().toLowerCase()));
-const bpPl=()=>(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&(!me||p.nick.toLowerCase()!==me.nick.toLowerCase()));
+const bpPl=()=>(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&(!me||p.nick.toLowerCase()!==me.nick.toLowerCase())).slice(0,100);
 /* всё пишем только при изменении — иначе таймер каждые 500 мс перерисовывает и вызывает мигание */
 function gTxt(){const b=$("bpg_b"),st=$("bpg_s"),pk=$("bpg_pick");if(!b||!st||!pk)return;const has=bpHas(bpSel),k=LANG+"|"+(has?1:0)+"|"+PREM;
 if(k!==_gk){_gk=k;$("bpg_t").textContent=L2("Подарить премиум другу","Gift premium to a friend");
@@ -2235,15 +2272,17 @@ b.disabled=has;
 const sp=bpSel?bpPl().find(p=>p.nick===bpSel):null,k2=LANG+"|"+bpSel+"|"+(bpOpen?1:0)+"|"+(sp?sp.avatar:"");
 if(k2!==_pk){_pk=k2;pk.innerHTML=(bpSel?avW(bpSel,sp?sp.avatar:"")+" "+"<b style=\"overflow:hidden;text-overflow:ellipsis\">"+esc(bpSel)+"</b>"+(sp?vipTag(sp):""):"<span style=\"color:var(--mute)\">"+L2("Выбрать игрока","Choose a player")+"</span>")+"<span style=\"margin-left:auto;flex:none;color:var(--mute)\">"+(bpOpen?"▴":"▾")+"</span>";try{avWatch(pk)}catch(e){}}
 const ls=$("bpg_list");ls.style.display=bpOpen?"flex":"none";
-if(bpOpen){const pl=bpPl(),k3=pl.map(p=>p.nick+(bpHas(p.nick)?"!":"")+(p.nick===bpSel?"*":"")).join("|")+LANG;
-if(k3!==_lk){_lk=k3;ls.innerHTML=pl.length?pl.map(p=>bpHas(p.nick)?`<button class="alt" disabled style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span style="margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f">✓ ${L2("Уже есть","Owned")}</span></button>`:`<button class="alt${p.nick===bpSel?" sel":""}" data-bpn="${esc(p.nick)}" style="display:flex;align-items:center;gap:8px;text-align:left;flex:none">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${L2("Игроков пока нет","No players yet")}</div>`;try{avWatch(ls)}catch(e){}}}else _lk=""}
+if(bpOpen){const pl=bpPl(),k3=pl.map(p=>p.nick+(bpHas(p.nick)?"!":"")+(p.nick===bpSel?"*":"")).join("|")+LANG+"#"+ppFavSig();
+if(k3!==_lk){_lk=k3;ls.innerHTML=ppList(pl,{sel:bpSel,has:p=>bpHas(p.nick),attr:"data-bpn"});try{avWatch(ls)}catch(e){}}}else _lk=""}
 const bpMark=gTxt;
 $("bpg_pick").onclick=()=>{bpOpen=!bpOpen;if(bpOpen){_lk="";try{loadPlayers().then(()=>{_lk="";gTxt()})}catch(e){}bpLoadOwn()}gTxt()};
-$("bpg_list").onclick=e=>{const b=e.target.closest("[data-bpn]");if(!b||b.disabled)return;bpSel=b.dataset.bpn;bpOpen=false;gTxt()};
+$("bpg_list").onclick=e=>{const f=e.target.closest("[data-fav]");if(f){e.stopPropagation();ppToggleFav(f.dataset.fav);_lk="";gTxt();return}const b=e.target.closest("[data-bpn]");if(!b||b.disabled)return;bpSel=b.dataset.bpn;bpOpen=false;gTxt()};
+$("bpg_h").onclick=()=>window.gHistOpen&&window.gHistOpen();
+window.bpGiftTo=n=>{bpSel=n;bpOpen=false;gTxt();try{openPanel("bpp")}catch(e){}};
 gTxt();setInterval(()=>{document.hidden||gTxt()},500);
 $("bpg_b").onclick=async()=>{if(!TOKEN||!me)return toast(L2("Войдите в аккаунт","Sign in first"),"err");const n=bpSel;if(!n){bpOpen=true;gTxt();try{loadPlayers().then(()=>{_lk="";gTxt()})}catch(e){}return toast(L2("Выберите игрока","Choose a player"),"err")}if(n.toLowerCase()===me.nick.toLowerCase())return toast(L2("Нельзя дарить себе","You can't gift yourself"),"err");if(bpHas(n))return toast(L2("У игрока уже есть премиум батлпасс","The player already has the premium battle pass"),"err");if((S.gem||0)<PREM)return toast(L2("Не хватает тикетов","Not enough tickets"),"err");if(tBusy||busy||!ready)return;tBusy=true;
 const r=await serial(async()=>{await trFlush();return await rpc("g2_trade_send",{p_token:TOKEN,p_to:n,p_give:{"$gems":PREM},p_want:{"$coins":1}})});tBusy=false;
-if(r.error)return toast(srv(r.error),"err");(bpOwn=bpOwn||new Set).add(n.toLowerCase());bpOwnAt=0;bpSel="";toast(L2("🎁 Подарок отправлен игроку ","🎁 Gift sent to ")+n,"ok");gTxt();loadTr()};
+if(r.error)return toast(srv(r.error),"err");const _m=($("bpg_msg")||{}).value||"";gNote(n,"bp",_m);if($("bpg_msg"))$("bpg_msg").value="";(bpOwn=bpOwn||new Set).add(n.toLowerCase());bpOwnAt=0;bpSel="";toast(L2("🎁 Подарок отправлен игроку ","🎁 Gift sent to ")+n,"ok");gTxt();loadTr()};
 setInterval(()=>{if(document.hidden)return;lab();if($("bpp").style.display==="block"){try{draw()}catch(e){}bpLoadOwn()}},500);
 })();
 </script>
@@ -3169,6 +3208,7 @@ button:hover:not(:disabled),button.alt:hover:not(:disabled){filter:none!importan
 button:disabled:active,button:disabled:hover{opacity:.38!important}
 .rbtn::after{display:none!important}
 button:focus,button:focus-visible{outline:none!important}
+#bpp button,#giftModal button,#shp .gpb button{min-height:44px}
 .pbox .ac,.pbox .ti{transition:none!important}
 </style><style id="shopui">
 #shp{background:radial-gradient(120% 60% at 50% -8%,rgba(168,85,247,.38),transparent 62%),radial-gradient(80% 40% at 100% 0,rgba(45,212,191,.22),transparent 60%),linear-gradient(180deg,#1a1034,#0d0a1f)!important;border:1px solid rgba(180,130,255,.35)!important;padding-top:20px}
@@ -3218,6 +3258,20 @@ button:focus,button:focus-visible{outline:none!important}
 #gpl .ti.vipcard{border-color:rgba(255,176,46,.55)!important;box-shadow:0 0 26px -10px rgba(255,176,46,.7)}
 #giftModal .gfrow{display:flex;align-items:center;gap:8px;width:100%;text-align:left}
 #giftModal .gfrow.has{opacity:.75;cursor:default}#giftModal .gfrow .gfown{margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f}
+/* единый список выбора игрока + избранные + история подарков */
+.ppi{display:flex;align-items:center;gap:8px;width:100%;text-align:left;flex:none}
+.ppi.has{opacity:.75;cursor:default}
+.ppi.sel{border-color:var(--c4)}
+.ppi .ppown{margin-left:auto;flex:none;padding:3px 9px;border-radius:10px;font:800 11px var(--fh);background:linear-gradient(135deg,#34d399,#10b981);color:#022c1f}
+.ppi .ppfav{margin-left:auto;flex:none;font-size:22px;line-height:1;padding:2px 6px;color:var(--mute)}
+.ppi .ppfav.on{color:#ffb02e}
+.gmsg{width:100%;margin-top:8px}
+#gHist .hrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07)}
+#gHist .hrow:last-child{border-bottom:0}
+#gHist .hrow .hm{flex:1;min-width:0;font-size:13px;line-height:1.35}
+#gHist .hrow .hm i{display:block;color:var(--mute);font-style:italic;word-break:break-word}
+#gHist .hrow .hs{font-size:11px;color:var(--mute)}
+#gHist .hrow button{flex:none;padding:6px 10px;min-height:36px}
 </style>
 <script id="vip-gift-js">(function(){"use strict";
 const T=(a,b)=>L2(a,b);
@@ -3231,31 +3285,31 @@ const gOwnTxt=()=>T("\u0423 \u0438\u0433\u0440\u043e\u043a\u0430 \u0443\u0436\u0
 function drawList(q){
   q=String(q||"").trim().toLowerCase();
   const me0=me&&me.nick?me.nick.toLowerCase():"";
-  const arr=(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&p.nick.toLowerCase()!==me0&&(!q||p.nick.toLowerCase().includes(q))).slice(0,40);
-  $("gf_list").innerHTML=arr.length?arr.map(p=>gHas(p.nick,p)?`<button class="alt gfrow has" disabled>${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}<span class="gfown">\u2713 ${gOwnTxt()}</span></button>`:`<button class="alt gfrow" data-n="${esc(p.nick)}">${avW(p.nick,p.avatar)} <b>${esc(p.nick)}</b>${vipTag(p)}</button>`).join(""):`<div style="color:var(--mute);font-size:13px;padding:6px">${T("Никого не найдено — введи ник вручную и нажми Enter","Nobody found — type a nickname and press Enter")}</div>`;
+  const arr=(typeof TP!=="undefined"&&Array.isArray(TP)?TP:[]).filter(p=>p&&p.nick&&p.nick.toLowerCase()!==me0&&(!q||p.nick.toLowerCase().includes(q))).slice(0,100);
+  $("gf_list").innerHTML=ppList(arr,{has:p=>gHas(p.nick,p),attr:"data-n"});
   try{avWatch($("gf_list"))}catch(e){}
 }
 function stepList(){
   const p=pr({price:gP.price});
   $("gf_t").innerHTML=gP.e+" "+esc(gname(gP))+" · "+IC("gem")+fmt(p);
-  $("gf_body").innerHTML=`<div style="color:var(--mute);font-size:13px;margin-bottom:8px">${T("Кому подарить?","Who gets the gift?")}</div><input id="gf_q" style="width:100%;margin-bottom:10px" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${T("Поиск игрока или ник","Search player or nickname")}"><div id="gf_list" class="sp-list"></div>`;
+  $("gf_body").innerHTML=`<div style="color:var(--mute);font-size:13px;margin-bottom:8px">${T("Кому подарить?","Who gets the gift?")}</div><input id="gf_q" style="width:100%;margin-bottom:10px" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${T("Поиск игрока","Search player")}"><div id="gf_list" class="sp-list" style="max-height:42vh;overflow:auto;display:flex;flex-direction:column;gap:6px"></div><button class="alt" id="gf_hist" style="width:100%;margin-top:10px">📜 ${T("История подарков","Gift history")}</button>`;
   $("gf_x").textContent=T("Отмена","Cancel");
   drawList("");
   const q=$("gf_q");q.oninput=()=>drawList(q.value);
-  q.onkeydown=e=>{if(e.key==="Enter"&&q.value.trim())stepConfirm(q.value.trim())};
-  $("gf_list").onclick=e=>{const b=e.target.closest("[data-n]");b&&stepConfirm(b.dataset.n)};
+  $("gf_list").onclick=e=>{const f=e.target.closest("[data-fav]");if(f){e.stopPropagation();ppToggleFav(f.dataset.fav);drawList($("gf_q")?$("gf_q").value:"");return}const b=e.target.closest("[data-n]");b&&stepConfirm(b.dataset.n)};
+  $("gf_hist").onclick=()=>{close();window.gHistOpen&&window.gHistOpen()};
 }
 function stepConfirm(nick){
   if(gHas(nick)){toast(T("\u0423 \u0438\u0433\u0440\u043e\u043a\u0430 \u0443\u0436\u0435 \u0435\u0441\u0442\u044c \u044d\u0442\u043e\u0442 \u043f\u0430\u0441\u0441","The player already owns this pass"),"err");return}
   gTo=nick;const p=pr({price:gP.price});
   $("gf_t").textContent=T("Подтверди подарок","Confirm the gift");
-  $("gf_body").innerHTML=`<div style="text-align:center;font-size:15px;line-height:1.7"><div style="font-size:40px">${gP.e}</div><b>${esc(gname(gP))}</b><br>${T("для","for")} <b style="display:inline-flex;align-items:center;gap:6px">${avW(nick,(TP.find(x=>x&&x.nick===nick)||{}).avatar)} ${esc(nick)}</b><br>${IC("gem")}<b>${fmt(p)}</b></div><div class="row"><button class="alt" id="gf_back">${T("Назад","Back")}</button><button id="gf_ok">🎁 ${T("Подарить","Gift")}</button></div>`;
+  $("gf_body").innerHTML=`<div style="text-align:center;font-size:15px;line-height:1.7"><div style="font-size:40px">${gP.e}</div><b>${esc(gname(gP))}</b><br>${T("для","for")} <b style="display:inline-flex;align-items:center;gap:6px">${avW(nick,(TP.find(x=>x&&x.nick===nick)||{}).avatar)} ${esc(nick)}</b><br>${IC("gem")}<b>${fmt(p)}</b></div>${gMsgInput("gf_msg")}<div class="row" style="margin-top:10px"><button class="alt" id="gf_back">${T("Назад","Back")}</button><button id="gf_ok">🎁 ${T("Подарить","Gift")}</button></div>`;
   $("gf_back").onclick=stepList;$("gf_ok").onclick=send;try{avWatch($("gf_body"))}catch(e){}
 }
 async function send(){
   if(gBusy||!gP||!gTo)return;
   if(!TOKEN||!me||!ready){toast(tr("tlogin"),"err");return}
-  const g=gP,to=gTo,p=pr({price:g.price});
+  const g=gP,to=gTo,p=pr({price:g.price}),msg=($("gf_msg")||{}).value||"";
   if((S.gem||0)<p){toast(T("Не хватает тикетов","Not enough tickets"),"err");return}
   gBusy=1;const ok=$("gf_ok");ok&&(ok.disabled=!0);
   let r={error:"?"};
@@ -3273,13 +3327,13 @@ async function send(){
   gBusy=0;ok&&(ok.disabled=!1);
   if(r.error){if(/\u0443\u0436\u0435 \u0435\u0441\u0442\u044c/.test(r.error)){(gOwn=gOwn||new Set).add(String(to).toLowerCase());stepList()}toast(/Could not find|schema cache/i.test(r.error)?T("Подарки ещё не включены на сервере","Gifts are not enabled on the server yet"):srv(r.error),"err");return}
   if(g.k==="vip"){window.VIPS=window.VIPS||{};window.VIPS[String(to).toLowerCase()]=1}
-  close();toast(T("Подарено: ","Gifted: ")+gname(g)+" → "+to,"ok");
+  close();toast(T("Подарено: ","Gifted: ")+gname(g)+" → "+to,"ok");gNote(to,"pass",msg);
   window.gpChanged&&window.gpChanged(1);
 }
-window.gpGift=function(k){
+window.gpGift=function(k,again){
   if(!TOKEN||!me)return toast(tr("tlogin"),"err");
   const g=GP_LIST.find(x=>x.k===k);if(!g)return;
-  gP=g;gTo="";stepList();gm().classList.add("show");
+  gP=g;gTo="";stepList();gm().classList.add("show");if(again)stepConfirm(again);
   gOwn=null;try{rpc("g2_pass_owners",{p_token:TOKEN,p_pass:g.k}).then(r=>{if(r&&r.error&&/Could not find|schema cache/i.test(r.error)){console.warn("g2_pass_owners не найдена: выполни sql/14_pass_owners.sql");try{isOwner&&toast("SQL 14_pass_owners.sql не выполнен — блокировка подарка не работает","err")}catch(e){}return}if(gP!==g||!r||r.error||!Array.isArray(r.data))return;gOwn=new Set(r.data.map(n=>String(n).toLowerCase()));if(!gTo&&$("gf_list"))drawList($("gf_q")?$("gf_q").value:"")})}catch(e){}
   try{(typeof TP==="undefined"||!TP.length)&&loadPlayers().then(()=>{gP&&!gTo&&$("gf_list")&&drawList($("gf_q")?$("gf_q").value:"")})}catch(e){}
 };
@@ -3340,4 +3394,69 @@ var tb=document.getElementById("topBtn");tb&&tb.addEventListener("click",functio
 var f=document.getElementById("flash");
 if(f){["animationend","animationcancel"].forEach(function(ev){f.addEventListener(ev,function(){f.classList.remove("go")})})}
 })();</script>
+<style id="ui-redesign">
+/* ===== Новый дизайн окон и меню: «Aurora glass» (только оформление, без анимаций) ===== */
+:root{--w-bg1:#1a1233;--w-bg2:#0d1021;--w-edge:rgba(170,140,255,.28);--w-glow:rgba(139,92,246,.32);--w-card1:rgba(255,255,255,.075);--w-card2:rgba(255,255,255,.028);--w-line:rgba(255,255,255,.09)}
+/* подложка */
+#pwrap{background:radial-gradient(120% 80% at 50% 0%,rgba(76,41,160,.38),rgba(4,3,14,.86) 70%)!important}
+.confirm-modal{background:radial-gradient(120% 80% at 50% 0%,rgba(76,41,160,.34),rgba(4,3,14,.84) 70%)!important}
+/* окно */
+.pbox,.modal-box{
+ background:
+  radial-gradient(120% 55% at 50% -8%,var(--w-glow),transparent 62%),
+  linear-gradient(180deg,var(--w-bg1),var(--w-bg2) 46%)!important;
+ border:1px solid var(--w-edge)!important;border-radius:28px!important;
+ box-shadow:0 34px 90px -18px rgba(0,0,0,.9),0 0 0 1px rgba(255,255,255,.03) inset,0 1px 0 rgba(255,255,255,.12) inset,0 0 60px -28px var(--w-glow)!important}
+.pbox{padding-bottom:16px}
+.modal-box{padding:22px 18px 18px!important}
+/* заголовки */
+.pbox .hd,.modal-title{letter-spacing:-.01em}
+.pbox .hd{font-size:18px;display:flex;align-items:center;gap:8px;padding-right:44px;margin-bottom:2px}
+.pbox .hd .ico{width:22px;height:22px;flex:none}
+.modal-title{font-size:19px!important;margin-bottom:14px!important}
+.modal-title::after{content:"";display:block;width:38px;height:3px;border-radius:3px;margin:9px auto 0;background:linear-gradient(90deg,var(--acc),#a78bfa 55%,var(--hot))}
+.pbox .sub,.pbox [id$="sub"]{color:var(--mute);font-size:13px;line-height:1.4}
+/* кнопка закрытия */
+.pclose{width:38px!important;height:38px!important;top:12px!important;right:12px!important;background:rgba(255,255,255,.07)!important;border:1px solid var(--w-line)!important}
+/* карточки и строки */
+.pbox .glass,.modal-box .glass{
+ background:linear-gradient(150deg,var(--w-card1),var(--w-card2))!important;
+ border:1px solid var(--w-line)!important;border-radius:18px!important;
+ box-shadow:0 10px 26px -18px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.07)!important}
+.pbox .ti{padding:12px!important;gap:12px!important;margin-top:8px}
+.pbox .ti .ic{border-radius:14px}
+.pbox .ti.off{opacity:.55}
+.pbox .ti .tx b{font-size:14.5px}
+.pbox .ti .tx span{font-size:12.5px;line-height:1.35}
+/* кнопки */
+.pbox button:not(.alt):not(.pclose):not(.gift):not(.arm):not(.chip):not(.own),.modal-box button:not(.alt):not(.arm){
+ background:linear-gradient(135deg,#35e3c9,#3aa7ff)!important;color:var(--ink)!important;border:0!important;border-radius:15px!important;
+ box-shadow:0 10px 24px -10px rgba(56,189,248,.7),inset 0 1px 0 rgba(255,255,255,.5)!important}
+.pbox button.alt:not(.pclose),.modal-box button.alt{
+ background:linear-gradient(180deg,rgba(255,255,255,.09),rgba(255,255,255,.04))!important;color:var(--text)!important;
+ border:1px solid rgba(255,255,255,.13)!important;border-radius:15px!important;box-shadow:none!important}
+.pbox button:disabled,.modal-box button:disabled{opacity:.4!important;filter:saturate(.35)!important;box-shadow:none!important}
+.pbox button.own:disabled{opacity:.9!important;filter:none!important;background:linear-gradient(135deg,#34d399,#10b981)!important;color:#022c1f!important}
+/* поля ввода */
+.pbox input,.pbox select,.pbox textarea,.modal-box input{
+ background:rgba(6,9,22,.75)!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:14px!important;color:var(--text)!important}
+.pbox input:focus,.pbox select:focus,.modal-box input:focus{border-color:var(--acc)!important;box-shadow:0 0 0 3px rgba(45,212,191,.18)!important;outline:none}
+.pbox input::placeholder,.modal-box input::placeholder{color:#6f7899}
+/* прогресс */
+.pb{height:8px!important;border-radius:8px!important;background:rgba(255,255,255,.07)!important;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.pb i{border-radius:8px!important;box-shadow:0 0 12px -2px currentColor}
+/* вкладки / чипы */
+.pbox .tabs,.pbox .chips{gap:8px}
+/* списки игроков и подарков */
+.ppi{border-radius:14px!important;padding:10px 12px!important}
+.ppi.sel{border-color:var(--acc)!important;box-shadow:0 0 0 2px rgba(45,212,191,.2)!important}
+#gHist .hrow{border-bottom-color:rgba(255,255,255,.08)}
+/* полосы прокрутки */
+.pbox,.modal-box,#gh_body,#gf_list,#bpg_list{scrollbar-width:thin;scrollbar-color:rgba(167,139,250,.45) transparent}
+.pbox::-webkit-scrollbar,#gh_body::-webkit-scrollbar,#gf_list::-webkit-scrollbar,#bpg_list::-webkit-scrollbar{width:6px}
+.pbox::-webkit-scrollbar-thumb,#gh_body::-webkit-scrollbar-thumb,#gf_list::-webkit-scrollbar-thumb,#bpg_list::-webkit-scrollbar-thumb{background:rgba(167,139,250,.45);border-radius:6px}
+/* панель админа: чуть компактнее */
+#admp .glass{padding:12px!important}
+#admp button{min-height:40px}
+</style>
 </body> </html>
