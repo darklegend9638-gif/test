@@ -3689,5 +3689,23 @@ h1,.orb,.orb *,.orb::before,.orb::after,#ld .c,.it .e{filter:none!important}
 /* clan buttons = admin panel style */
 #clanp .row button,#clanp .ti button{padding:11px 10px;font-size:13px;min-height:44px}
 #clanp .ti button{min-height:40px;padding:9px 13px}
+#pwrap,#pwrap.open,.confirm-modal{background:rgba(2,0,10,.18)!important}
+button,.pclose,#menuBtn{touch-action:manipulation}
+#menu{background:#0b0620!important;opacity:1!important}
+#menu button,#menu .glass{background:#140838!important;opacity:1!important}
+#pwrap .pbox,.pbox,.modal-box,#reg .box{background:#0b0620!important;opacity:1!important}
 </style>
+<script>
+(function(){
+function suppress(){var f=function(e){e.stopPropagation();e.preventDefault()};
+document.addEventListener("click",f,true);setTimeout(function(){document.removeEventListener("click",f,true)},450)}
+document.addEventListener("pointerdown",function(e){
+var t=e.target&&e.target.closest?e.target:null;if(!t)return;
+var x=t.closest(".pclose");
+if(x&&document.getElementById("pwrap").classList.contains("open")){suppress();try{closePanel()}catch(_){}return}
+var mb=t.closest("#menuBtn"),m=document.getElementById("menu");
+if(mb&&m&&m.classList.contains("open")){suppress();mb.click()}
+},true);
+})();
+</script>
 </body> </html>
