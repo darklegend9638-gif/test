@@ -2807,7 +2807,10 @@ setInterval(()=>{if(ready&&off){S.lt=Date.now();dirty=!0}},5000);
   const mods=()=>Array.prototype.slice.call(document.querySelectorAll(".confirm-modal"));
   const upd=()=>{const on=mods().some(m=>m.classList.contains("show"));H.classList.toggle("mlock",on)};
   const mo=new MutationObserver(upd);
-  mods().forEach(m=>mo.observe(m,{attributes:true,attributeFilter:["class","style"]}));
+  /* следим за ВСЕМИ окнами, включая созданные позже (подарки, история подарков), и подстраховываемся таймером */
+  const seen=new WeakSet(),obs=()=>mods().forEach(m=>{if(!seen.has(m)){seen.add(m);mo.observe(m,{attributes:true,attributeFilter:["class","style"]})}});
+  obs();new MutationObserver(()=>{obs();upd()}).observe(document.body,{childList:true});
+  setInterval(()=>{obs();upd()},600);
   /* внутри окна можно листать любой список, который реально прокручивается (список выбора, титулы и т.д.) */
   const sc=t=>{for(let n=t;n&&n!==document.body&&n!==H;n=n.parentElement){if(n.classList&&n.classList.contains("confirm-modal"))return!1;const o=getComputedStyle(n).overflowY;if((o==="auto"||o==="scroll")&&n.scrollHeight>n.clientHeight+1)return!0}return!1};
   const stop=e=>{if(!H.classList.contains("mlock"))return;const t=e.target&&e.target.closest?e.target:null;
