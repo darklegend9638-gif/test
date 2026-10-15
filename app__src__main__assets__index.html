@@ -3708,4 +3708,9 @@ if(mb&&m&&m.classList.contains("open")){suppress();mb.click()}
 },true);
 })();
 </script>
+<script>
+(function(){var o=window.setLang;if(typeof o!=="function")return;
+window.setLang=function(e){o.apply(this,arguments);try{var b=document.getElementById("frb");if(b){var m=/\(\d+\)\s*$/.exec(b.textContent),suf=m?" "+m[0].trim():"";
+b.innerHTML='<svg class="ico"><use href="#i-user"/></svg>'+(e==="en"?"Friends":"Друзья")+suf;b.__h=b.innerHTML}}catch(_){}}})();
+</script>
 </body> </html>
