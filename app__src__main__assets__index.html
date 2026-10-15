@@ -1334,7 +1334,7 @@ function trMoneyUI(){const rows=[["tr_gc","g","$coins"],["tr_gg","g","$gems"],["
  rows.forEach(([id,sd,k])=>{const el=$(id),o=sd==="g"?trG:trW;if(document.activeElement!==el)el.value=o[k]?String(o[k]):"";el.disabled=sd==="w"&&!tSel;if(o[k]>trMax(sd,k)&&sd==="w")trMoney(sd,k,el)});
  trMaxLbl()}
 const trLbl={done:["Выполнен","Done"],declined:["Отклонён","Declined"],cancelled:["Отменён","Cancelled"],expired:["Истёк","Expired"]};
-function trRow(a,max,sel,side){const c=R[a.i].c,k=ALL.indexOf(a);return `<div class="glass ti" style="border-color:${c}"><div class="ic">${esc(a.t.split(" ")[0])}</div><div class="tx"><b style="color:${c}">${esc(iname(a.t))}</b><span>${rname(a.i)} · ${L2("дубликатов","duplicates")} ${max}</span></div><div class="stp"><button class="alt" data-tq="${side}|${k}|-1">−</button><b>${sel||0}</b><button class="alt" data-tq="${side}|${k}|1">+</button></div></div>`}
+function trRow(a,max,sel,side){const c=R[a.i].c,k=ALL.indexOf(a);return `<div class="glass ti" style="border-color:${c}"><div class="ic">${esc(a.t.split(" ")[0])}</div><div class="tx"><b style="color:${c}">${esc(iname(a.t))}</b><span>${rname(a.i)} · ${L2("повторок","dupes")} ${max}</span></div><div class="stp"><button class="alt" data-tq="${side}|${k}|-1">−</button><b>${sel||0}</b><button class="alt" data-tq="${side}|${k}|1">+</button></div></div>`}
 function drawTrI(){const f=a=>trRF<0||a.i===trRF,mine=ALL.filter(a=>(S.found[a.t]||0)>1&&f(a)).sort((x,y)=>y.i-x.i),th=ALL.filter(a=>(trPD[a.t]||0)>0&&f(a)).sort((x,y)=>y.i-x.i);
  $("tr_gh").textContent=L2("Я отдаю","I give");$("tr_wh").textContent=L2("Хочу получить","I want");trMoneyUI();
  $("tr_rf").innerHTML=`<button class="${trRF<0?"":"alt"}" data-rf="-1">${L2("Все","All")}</button>`+R.map((r,i)=>`<button class="${trRF===i?"":"alt"}" data-rf="${i}" style="border-color:${r.c}">${r.n}</button>`).join("");
@@ -1356,7 +1356,7 @@ async function trFlush(){if(!dirty)return;dirty=!1;const sn=(_gsn=S.gem,S.coins)
 function iaKey(n){return GPX+"gacha-ia-"+String(n||(me&&me.nick)||"").toLowerCase()}function iaLoad(){try{const o=JSON.parse(localStorage.getItem(iaKey())||"null");return o&&typeof o=="object"&&!Array.isArray(o)?o:null}catch{return null}}function iaSave(o){try{localStorage.setItem(iaKey(),JSON.stringify(o))}catch{}}function iaClear(n){try{localStorage.removeItem(iaKey(n))}catch{}}function iaRestore(){if(!S._ia){const l=iaLoad();l&&(S._ia=l)}}
 function applyTrade(ia){ia=ia||{};iaRestore();if(TRB||!S._ia&&(S.rolls>0||Object.keys(S.found||{}).length>0)){TRB=0;S._ia=Object.assign({},ia);iaSave(S._ia);dirty=!0;pushSoon();return 0}S._ia=S._ia||{};let ch=0;for(const k in ia){const d=(+ia[k]||0)-(+S._ia[k]||0);if(!d)continue;if(k==="$coins")S.coins=Math.max(0,S.coins+d);else if(k==="$gems")S.gem=Math.max(0,(S.gem||0)+d);else S.found[k]=Math.max(0,(S.found[k]||0)+d);S._ia[k]=+ia[k];ch++}
  if(ch){ALL.forEach(a=>{S.found[a.t]&&a.i>S.best&&(S.best=a.i)});iaSave(S._ia);dirty=!0;render();pushSoon();$("trp").style.display==="block"&&trTab==="n"&&drawTrI()}return ch}
-function trErr(e){e=String(e||"");if(/trade_self_too_young/.test(e))return L2("Трейды доступны через 7 дней после регистрации аккаунта","Trading unlocks 7 days after your account was created");if(/trade_partner_too_young/.test(e))return L2("Аккаунту игрока меньше 7 дней — трейд недоступен","That player's account is younger than 7 days — trade unavailable");return e}
+function trErr(e){e=String(e||"");if(/trade_self_too_young/.test(e))return L2("Трейды доступны с 7 дней после регистрации вашего аккаунта","Trading unlocks 7 days after your account was created");if(/trade_partner_too_young/.test(e))return L2("Аккаунту игрока меньше 7 дней — трейд недоступен","That player's account is younger than 7 days — trade unavailable");return e}
 async function trAct(kind,id){if(tBusy)return;tBusy=!0;const ok=kind==="ok",n=await serial(async()=>{ok&&await trFlush();return await rpc("g2_trade_respond",{p_token:TOKEN,p_id:id,p_accept:ok})});tBusy=!1;
  if(n.error){tMsg(trErr(n.error));loadTr();return}(n.data||{}).iadj&&applyTrade(n.data.iadj);tMsg(ok?"":L2("Готово","Done"),!0);loadTr()}
 async function trSync(){if(!TOKEN||!ready||document.hidden||Date.now()<trOff)return;const r=await serial(()=>rpc("g2_trade_sync",{p_token:TOKEN}));
@@ -1752,7 +1752,7 @@ let shTab="p";function applyShTab(){$("sh_t").style.display=shTab==="t"?"":"none
         if (sel) {
             const rb = (k, lbl) => `<button class="${(m.rank || "") === k ? "" : "alt"}" data-a="rk" data-nick="${esc(m.nick)}" data-rank="${k}" style="padding:9px 6px;font-size:12px">${lbl}</button>`;
             h += `<div class="row">${mr === "owner" ? rb("coleader", "⭐ " + rkName("coleader")) : ""}${rb("veteran", "🛡️ " + rkName("veteran"))}${rb("", L2("Без ранга", "No rank"))}</div>`;
-            h += `<div class="row"><button class="alt" data-a="kick" data-nick="${esc(m.nick)}" style="border-color:var(--c5);color:var(--c5)">${L2("Исключить из клана", "Kick from the clan")}</button><button class="alt" data-a="mx" style="flex:none">✕</button></div>`;
+            h += `<div class="row"><button class="alt" data-a="kick" data-nick="${esc(m.nick)}" style="border-color:var(--c5);color:var(--c5)">${L2("Исключить из клана", "Kick from clan")}</button><button class="alt" data-a="mx" style="flex:none">✕</button></div>`;
         }
         return h;
     }
@@ -1770,13 +1770,13 @@ let shTab="p";function applyShTab(){$("sh_t").style.display=shTab==="t"?"":"none
             const c = CLAN;
             const mx = c.level >= 10;
             const pct = mx ? 100 : Math.min(100, c.pool / c.next * 100);
-            b.innerHTML = `<div style="font:800 19px var(--fh);margin-top:10px">[${esc(c.tag)}] ${esc(c.name)}</div><div style="color:var(--mute);font-size:13px;margin-top:2px">${L2("Уровень", "Level")} ${c.level}/10 · ${L2("бонус монет", "coin bonus")} +${c.level * 3}%</div><div style="font-size:14px;margin-top:6px">🏦 ${L2("Казна клана", "Clan treasury")}: <b>🪙 ${fmt(+c.bank || 0)}</b></div><div style="font-size:12px;color:var(--mute);margin-top:2px">${L2("Улучшения покупаются за монеты из казны", "Upgrades are bought with coins from the treasury")}</div>${capBlock(c)}${perkBlock(c)}<div style="height:8px;border-radius:6px;background:var(--line);margin:10px 0 4px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,var(--btn1),var(--btn2))"></i></div><div style="font-size:13px;color:var(--mute)">${mx ? "MAX" : "🪙 " + fmt(c.pool) + " / " + fmt(c.next) + " " + L2("до следующего уровня", "to next level")}</div>` + (`<div class="row"><input id="cl_amt" type="number" min="1" value="${window.__clAmt||1}" inputmode="numeric"><button class="alt" data-a="all" style="flex:none">${L2("Все", "All")}</button><button data-a="don" style="flex:none">${L2("Вложить 🪙", "Donate 🪙")}</button></div><div style="font-size:12px;color:var(--mute);margin-top:4px">${L2("У тебя", "You have")}: 🪙 ${fmt(S.coins || 0)}</div>`) + `<h2 style="margin-top:16px">${L2("Топ вкладчиков клана", "Top clan donors")} (${c.members.length})</h2>` + c.members.map((m, i) => memberRow(m, i)).join("") + `<div class="row"><button class="alt" data-a="leave" style="border-color:var(--c5);color:var(--c5)">${L2("Покинуть клан", "Leave clan")}</button></div>`;
+            b.innerHTML = `<div style="font:800 19px var(--fh);margin-top:10px">[${esc(c.tag)}] ${esc(c.name)}</div><div style="color:var(--mute);font-size:13px;margin-top:2px">${L2("Уровень", "Level")} ${c.level}/10 · ${L2("бонус монет", "coin bonus")} +${c.level * 3}%</div><div style="font-size:14px;margin-top:6px">🏦 ${L2("Казна клана", "Clan treasury")}: <b>🪙 ${fmt(+c.bank || 0)}</b></div><div style="font-size:12px;color:var(--mute);margin-top:2px">${L2("Улучшения покупаются за монеты из казны", "Upgrades are bought with coins from the treasury")}</div>${capBlock(c)}${perkBlock(c)}<div style="height:8px;border-radius:6px;background:var(--line);margin:10px 0 4px;overflow:hidden"><i style="display:block;height:100%;width:${pct}%;background:linear-gradient(90deg,var(--btn1),var(--btn2))"></i></div><div style="font-size:13px;color:var(--mute)">${mx ? "MAX" : "🪙 " + fmt(c.pool) + " / " + fmt(c.next) + " " + L2("до следующего уровня", "to next level")}</div>` + (`<div class="row"><input id="cl_amt" type="number" min="1" value="${window.__clAmt||1}" inputmode="numeric"><button class="alt" data-a="all" style="flex:none">${L2("Все", "All")}</button><button data-a="don" style="flex:none">${L2("Вложить 🪙", "Donate 🪙")}</button></div><div style="font-size:12px;color:var(--mute);margin-top:4px">${L2("У тебя", "You have")}: 🪙 ${fmt(S.coins || 0)}</div>`) + `<h2 style="margin-top:16px">${L2("Топ вкладчиков клана", "Clan top donors")} (${c.members.length})</h2>` + c.members.map((m, i) => memberRow(m, i)).join("") + `<div class="row"><button class="alt" data-a="leave" style="border-color:var(--c5);color:var(--c5)">${L2("Покинуть клан", "Leave clan")}</button></div>`;
             return;
         }
-        b.innerHTML = `<div style="color:var(--mute);font-size:13px;margin-top:6px">${L2("Клан даёт +3% к монетам за каждый уровень (до +30%). Уровень повышается за счёт монет участников.", "A clan gives +3% coins per level (up to +30%). Levels are upgraded with members' coins.")}</div><h2>${L2("Создать клан", "Create clan")}</h2><div class="row"><input id="cl_name" maxlength="16" placeholder="${L2("Название", "Name")}"><input id="cl_tag" maxlength="4" placeholder="TAG" style="flex:none;width:90px;text-transform:uppercase"></div><div class="row"><button data-a="create">${L2("Создать", "Create")} · 💎 500</button></div><h2>${L2("Кланы", "Clans")}</h2>` + (LST.length ? LST.map(x => `<div class="glass ti"><div class="tx"><b>[${esc(x.tag)}] ${esc(x.name)}</b><span>${L2("Ур.", "Lv")} ${x.level} · ${x.members}/${capOf(x.tag)}</span></div><button data-a="join" data-id="${x.id}" ${x.members >= capOf(x.tag) ? "disabled" : ""}>${L2("Вступить", "Join")}</button></div>`).join("") : `<div style="color:var(--mute);font-size:13px">${L2("Пока нет кланов", "No clans yet")}</div>`);
+        b.innerHTML = `<div style="color:var(--mute);font-size:13px;margin-top:6px">${L2("Клан даёт +3% к монетам за каждый уровень (до +30%). Уровень качается монетами участников.", "A clan gives +3% coins per level (up to +30%). Levels are upgraded with members' coins.")}</div><h2>${L2("Создать клан", "Create clan")}</h2><div class="row"><input id="cl_name" maxlength="16" placeholder="${L2("Название", "Name")}"><input id="cl_tag" maxlength="4" placeholder="TAG" style="flex:none;width:90px;text-transform:uppercase"></div><div class="row"><button data-a="create">${L2("Создать", "Create")} · 💎 500</button></div><h2>${L2("Кланы", "Clans")}</h2>` + (LST.length ? LST.map(x => `<div class="glass ti"><div class="tx"><b>[${esc(x.tag)}] ${esc(x.name)}</b><span>${L2("Ур.", "Lv")} ${x.level} · ${x.members}/${capOf(x.tag)}</span></div><button data-a="join" data-id="${x.id}" ${x.members >= capOf(x.tag) ? "disabled" : ""}>${L2("Вступить", "Join")}</button></div>`).join("") : `<div style="color:var(--mute);font-size:13px">${L2("Пока нет кланов", "No clans yet")}</div>`);
     }
     let TOPV = false, TOP = null, topErr = "";
-    const topTabs = () => `<div class="row" style="margin-top:8px"><button class="${TOPV ? "alt" : ""}" data-a="tb" style="padding:9px">🏰 ${L2("Клан", "Clan")}</button><button class="${TOPV ? "" : "alt"}" data-a="tt" style="padding:9px">🏆 ${L2("Топ кланов", "Clan leaderboard")}</button></div>`;
+    const topTabs = () => `<div class="row" style="margin-top:8px"><button class="${TOPV ? "alt" : ""}" data-a="tb" style="padding:9px">🏰 ${L2("Клан", "Clan")}</button><button class="${TOPV ? "" : "alt"}" data-a="tt" style="padding:9px">🏆 ${L2("Топ кланов", "Clan top")}</button></div>`;
     function drawTop() {
         const b = B();
         let h = topTabs() + `<div style="color:var(--mute);font-size:13px;margin:10px 0 2px">${L2("Кто больше всех вложил в казну", "Who donated the most to the treasury")}</div>`;
@@ -3555,35 +3555,21 @@ if(f){["animationend","animationcancel"].forEach(function(ev){f.addEventListener
 <style id="ui-redesign2">
 #frp h2{font:800 12px var(--fh);letter-spacing:.06em;text-transform:uppercase;color:#f9a8d4;margin:16px 0 6px}
 #frp .trn{text-align:center;color:var(--mute);border:1px dashed rgba(255,255,255,.16);border-radius:14px;padding:14px;font-size:13px;margin-top:8px}
-/* ===== Клан / Трейды / Идеи: цвета зависят от темы в профиле (Ночь · Неон · Светлая) ===== */
-#clanp,#trp,#idp{--pa:#2dd4bf;--pr:45,212,191;--ph:var(--text);--pb1:#35e3c9;--pb2:#3aa7ff;--pk:#04121a;--pg1:#1a1233;--pg2:#0d1021;--pgl:139,92,246}
-#trp{--pa:#34d399;--pr:52,211,153;--ph:#a7f3d0;--pb1:#6ee7b7;--pb2:#10b981;--pk:#022c1f;--pg1:#0f2b25;--pg2:#0b1020;--pgl:16,185,129}
-#idp{--pa:#facc15;--pr:250,204,21;--ph:#fef08a;--pb1:#fde68a;--pb2:#f59e0b;--pk:#3b2200;--pg1:#2a2110;--pg2:#0e0f1f;--pgl:250,204,21}
-html[data-theme=neon] #clanp{--pa:#ff4de0;--pr:255,43,214;--ph:#ffd0f7;--pb1:#ff2bd6;--pb2:#7c4dff;--pk:#fff;--pg1:#2a0a3d;--pg2:#10041c;--pgl:255,43,214}
-html[data-theme=neon] #trp{--pa:#00ffa3;--pr:0,255,163;--ph:#b6ffe0;--pb1:#00ffa3;--pb2:#00b894;--pk:#00261a;--pg1:#07302a;--pg2:#10041c;--pgl:0,255,163}
-html[data-theme=neon] #idp{--pa:#ffd23f;--pr:255,210,63;--ph:#fff0a8;--pb1:#ffe066;--pb2:#ff9f1c;--pk:#2e1a00;--pg1:#33210f;--pg2:#10041c;--pgl:255,190,40}
-html[data-theme=light] #clanp{--pa:#0d9488;--pr:13,148,136;--ph:#0f172a;--pb1:#2dd4bf;--pb2:#38bdf8;--pk:#04121a;--pg1:#e9efff;--pg2:#ffffff;--pgl:99,102,241}
-html[data-theme=light] #trp{--pa:#047857;--pr:5,150,105;--ph:#047857;--pb1:#34d399;--pb2:#059669;--pk:#ffffff;--pg1:#dcfaec;--pg2:#ffffff;--pgl:16,185,129}
-html[data-theme=light] #idp{--pa:#b45309;--pr:217,119,6;--ph:#92400e;--pb1:#fde68a;--pb2:#f59e0b;--pk:#3b2200;--pg1:#fff3c4;--pg2:#ffffff;--pgl:250,204,21}
-#clanp,#trp,#idp{background:radial-gradient(120% 50% at 50% -8%,rgba(var(--pgl),.26),transparent 62%),linear-gradient(180deg,var(--pg1),var(--pg2) 46%)!important;border-color:rgba(var(--pr),.38)!important}
-#clanp .hd,#trp .hd,#idp .hd{color:var(--ph)}
-#clanp h2,#trp h2,#idp h2{font:800 12px var(--fh);letter-spacing:.06em;text-transform:uppercase;color:var(--pa);margin:16px 0 6px}
-#clanp .ti .ic,#trp .ti .ic,#idp .ti .ic{background:linear-gradient(145deg,rgba(var(--pr),.34),rgba(var(--pr),.1))!important;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
-#clanp .ti.eq,#trp .ti.eq,#idp .ti.eq{border-color:rgba(var(--pr),.6)!important;box-shadow:0 0 0 1px rgba(var(--pr),.25),0 10px 26px -16px rgba(var(--pr),.6)!important}
+/* ===== Кланы (золотая тема) ===== */
+#clanp{background:radial-gradient(120% 50% at 50% -8%,rgba(251,191,36,.26),transparent 62%),linear-gradient(180deg,#231626,#0e0f1f 46%)!important;border-color:rgba(251,191,36,.36)!important}
+#clanp .hd{color:#fde68a}
+#clanp h2{font:800 12px var(--fh);letter-spacing:.06em;text-transform:uppercase;color:#fcd34d;margin:16px 0 6px}
+#clanp .ti .ic{background:linear-gradient(145deg,rgba(251,191,36,.38),rgba(168,85,247,.26))!important;border-radius:14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+#clanp .ti.eq{border-color:rgba(251,191,36,.6)!important;box-shadow:0 0 0 1px rgba(251,191,36,.25),0 10px 26px -16px rgba(251,191,36,.6)!important}
 #clanp .ti.clk{cursor:pointer}
-#clanp .pb i,#trp .pb i,#idp .pb i{background:linear-gradient(90deg,var(--pb1),var(--pb2))!important}
-#clanp button:not(.alt):not(.pclose):not(.arm),#trp button:not(.alt):not(.pclose):not(.arm),#idp button:not(.alt):not(.pclose):not(.arm){background:linear-gradient(135deg,var(--pb1),var(--pb2))!important;color:var(--pk)!important;border:0!important;border-radius:15px!important;font-weight:800!important;box-shadow:0 10px 24px -10px rgba(var(--pr),.7),inset 0 1px 0 rgba(255,255,255,.5)!important}
-#clanp button.alt:not(.pclose),#trp button.alt:not(.pclose),#idp button.alt:not(.pclose){background:rgba(var(--pr),.1)!important;color:var(--text)!important;border:1px solid rgba(var(--pr),.42)!important;border-radius:15px!important;box-shadow:none!important}
-#idp .idad button.on{border-color:var(--pa)!important;color:var(--pa)!important}
+#clanp .pb i{background:linear-gradient(90deg,#fbbf24,#f97316)!important}
+#clanp button:not(.alt):not(.pclose){background:linear-gradient(180deg,#ffe58f 0%,#fbbf24 48%,#f59e0b 100%)!important;color:#3b2200!important;border:1px solid #fde68a!important;border-bottom:4px solid #b45309!important;border-radius:15px!important;font-weight:900!important;letter-spacing:.02em;text-shadow:0 1px 0 rgba(255,255,255,.5);box-shadow:0 12px 24px -10px rgba(245,158,11,.8),inset 0 2px 0 rgba(255,255,255,.7),inset 0 -2px 0 rgba(180,83,9,.25)!important}
+#clanp button.alt:not(.pclose){background:linear-gradient(180deg,rgba(251,191,36,.2),rgba(251,191,36,.06))!important;color:#fde68a!important;border:1px solid rgba(251,191,36,.5)!important;border-bottom:4px solid rgba(180,83,9,.7)!important;border-radius:15px!important;font-weight:800!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 8px 18px -12px rgba(0,0,0,.9)!important}
+#clanp button:disabled{background:linear-gradient(180deg,#4b5063,#343849)!important;color:#9aa1b8!important;border:1px solid rgba(255,255,255,.12)!important;border-bottom:4px solid #23263a!important;text-shadow:none;box-shadow:none!important;opacity:.7!important}
 #clanp .ti button{padding:9px 13px!important;min-height:40px;font-size:13px}
 #clanp .row button{min-height:44px}
-#clanp input,#trp input,#idp input,#idp textarea,#trp select{border-color:rgba(var(--pr),.35)!important}
-#clanp input:focus,#trp input:focus,#idp input:focus,#idp textarea:focus{border-color:var(--pa)!important;box-shadow:0 0 0 3px rgba(var(--pr),.2)!important}
-/* светлая тема: светлые карточки, поля и крестик */
-html[data-theme=light] :is(#clanp,#trp,#idp) .glass{background:rgba(255,255,255,.72)!important;border-color:rgba(var(--pr),.22)!important;box-shadow:0 8px 20px -14px rgba(20,35,90,.35)!important}
-html[data-theme=light] :is(#clanp,#trp,#idp) :is(input,textarea,select){background:rgba(255,255,255,.95)!important;color:var(--text)!important}
-html[data-theme=light] :is(#clanp,#trp,#idp) .pclose{background:rgba(15,25,60,.07)!important;border-color:rgba(15,25,60,.15)!important}
-html[data-theme=light] :is(#clanp,#trp,#idp) .pclose svg{stroke:#0d1630}
+#clanp input{border-color:rgba(251,191,36,.35)!important}
+#clanp input:focus{border-color:#fbbf24!important;box-shadow:0 0 0 3px rgba(251,191,36,.2)!important}
 /* ===== Друзья ===== */
 #frp{background:radial-gradient(120% 50% at 50% -8%,rgba(244,114,182,.26),transparent 62%),linear-gradient(180deg,#24142b,#0e0f1f 46%)!important;border-color:rgba(244,114,182,.34)!important}
 #frp .hd{color:#fbcfe8}
@@ -3593,6 +3579,8 @@ html[data-theme=light] :is(#clanp,#trp,#idp) .pclose svg{stroke:#0d1630}
 .fr button.arm{background:linear-gradient(135deg,#fb7185,#e11d48)!important;color:#fff!important}
 .ppfr{margin-left:auto;flex:none;font-size:18px}
 /* ===== Идеи ===== */
+#idp{background:radial-gradient(120% 50% at 50% -8%,rgba(250,204,21,.22),transparent 62%),linear-gradient(180deg,#221d12,#0e0f1f 46%)!important;border-color:rgba(250,204,21,.34)!important}
+#idp .hd{color:#fef08a}
 #idp .trn{text-align:center;color:var(--mute);border:1px dashed rgba(255,255,255,.16);border-radius:14px;padding:14px;font-size:13px;margin-top:10px}
 .idbox{padding:12px;margin-top:10px}
 .idbox textarea{width:100%;resize:none;padding:10px 12px;font:inherit;font-size:14px;touch-action:manipulation}
