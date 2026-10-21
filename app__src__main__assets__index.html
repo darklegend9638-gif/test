@@ -4674,4 +4674,25 @@ sweep();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(sweep
 })();</script>
 <script id="topfix">(function(){var st=document.createElement("style");st.textContent="#toplist .ti.eq{background:linear-gradient(90deg,rgba(255,200,60,.28),rgba(255,140,30,.12))!important;border:2px solid #ffc23c!important;box-shadow:0 0 18px rgba(255,194,60,.55),inset 0 0 12px rgba(255,194,60,.18)!important;transform:scale(1.02)}#toplist .ti.eq .tx b{color:#ffe08a}";document.head.appendChild(st);
 var el=document.getElementById("toptitle");if(el){var f=function(){var t=el.textContent;if(t.indexOf(" · ")>-1){el.textContent=t.split(" · ")[0]}};f();new MutationObserver(f).observe(el,{childList:true,characterData:true,subtree:true})}})();</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap"><style id="onefont">:root{--fb:"Russo One","Segoe UI",system-ui,sans-serif!important;--fh:"Russo One","Segoe UI",system-ui,sans-serif!important}html,body,*,*::before,*::after,button,input,select,textarea{font-family:"Russo One","Segoe UI",system-ui,"Apple Color Emoji","Noto Color Emoji",sans-serif!important;font-weight:400!important;letter-spacing:.02em}b,strong,h1,h2,h3{font-weight:400!important}</style>
+<script id="noholiday">(function(){var H=["winter","newyear","valentine","spring","summer","autumn","halloween"];
+function go(){try{H.forEach(function(k){delete EVD[k]});for(var i=EXALL.length-1;i>=0;i--)if(H.indexOf(EXALL[i].k)>-1)EXALL.splice(i,1);
+ if(typeof setEvl==="function")setEvl(EVL.filter(function(e){return EVD[e.id]}))}catch(e){}
+ document.querySelectorAll("select option").forEach(function(o){if(H.indexOf(o.value)>-1)o.remove()});
+ }
+go();try{render()}catch(e){}var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(go,200)}).observe(document.body,{childList:true,subtree:true});})();</script>
+<script id="modallock">(function(){
+var OK=".pbox,.dlg,.modal,.toast,#toasts,[role=dialog],[role=alertdialog],.swal2-container,#ld";
+var st=document.createElement("style");st.textContent="html.pmodal,html.pmodal body{overflow:hidden!important}.pbox{overscroll-behavior:contain}";document.head.appendChild(st);
+function open(){var a=document.querySelectorAll(".pbox");for(var i=0;i<a.length;i++)if(getComputedStyle(a[i]).display!=="none")return true;return false}
+function sync(){document.documentElement.classList.toggle("pmodal",open())}
+function inOpen(t){var e=t&&t.closest?t.closest(".pbox"):null;return e&&getComputedStyle(e).display!=="none"}
+function block(e){if(!document.documentElement.classList.contains("pmodal"))return;var t=e.target;if(t&&t.closest&&t.closest(OK)&&(t.closest(".pbox")?inOpen(t):true))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
+["click","mousedown","mouseup","pointerdown","pointerup","touchstart","touchend","contextmenu"].forEach(function(n){window.addEventListener(n,block,{capture:true,passive:false})});
+function noscroll(e){if(!document.documentElement.classList.contains("pmodal"))return;if(inOpen(e.target))return;e.preventDefault()}
+["touchmove","wheel"].forEach(function(n){window.addEventListener(n,noscroll,{capture:true,passive:false})});
+window.addEventListener("keydown",function(e){if(document.documentElement.classList.contains("pmodal")&&/^(Space| |PageUp|PageDown|ArrowUp|ArrowDown)$/.test(e.key||e.code)&&!/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||""))e.preventDefault()},true);
+sync();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(sync,30)}).observe(document.body,{attributes:true,attributeFilter:["style","class"],childList:true,subtree:true});
+setInterval(sync,500);
+})();</script>
 </body> </html>
