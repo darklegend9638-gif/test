@@ -4681,18 +4681,4 @@ function go(){try{H.forEach(function(k){delete EVD[k]});for(var i=EXALL.length-1
  document.querySelectorAll("select option").forEach(function(o){if(H.indexOf(o.value)>-1)o.remove()});
  }
 go();try{render()}catch(e){}var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(go,200)}).observe(document.body,{childList:true,subtree:true});})();</script>
-<script id="modallock">(function(){
-var OK=".pbox,.dlg,.modal,.toast,#toasts,[role=dialog],[role=alertdialog],.swal2-container,#ld";
-var st=document.createElement("style");st.textContent="html.pmodal,html.pmodal body{overflow:hidden!important}.pbox{overscroll-behavior:contain}";document.head.appendChild(st);
-function open(){var a=document.querySelectorAll(".pbox");for(var i=0;i<a.length;i++)if(getComputedStyle(a[i]).display!=="none")return true;return false}
-function sync(){document.documentElement.classList.toggle("pmodal",open())}
-function inOpen(t){var e=t&&t.closest?t.closest(".pbox"):null;return e&&getComputedStyle(e).display!=="none"}
-function block(e){if(!document.documentElement.classList.contains("pmodal"))return;var t=e.target;if(t&&t.closest&&t.closest(OK)&&(t.closest(".pbox")?inOpen(t):true))return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation()}
-["click","mousedown","mouseup","pointerdown","pointerup","touchstart","touchend","contextmenu"].forEach(function(n){window.addEventListener(n,block,{capture:true,passive:false})});
-function noscroll(e){if(!document.documentElement.classList.contains("pmodal"))return;if(inOpen(e.target))return;e.preventDefault()}
-["touchmove","wheel"].forEach(function(n){window.addEventListener(n,noscroll,{capture:true,passive:false})});
-window.addEventListener("keydown",function(e){if(document.documentElement.classList.contains("pmodal")&&/^(Space| |PageUp|PageDown|ArrowUp|ArrowDown)$/.test(e.key||e.code)&&!/INPUT|TEXTAREA|SELECT/.test((e.target||{}).tagName||""))e.preventDefault()},true);
-sync();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(sync,30)}).observe(document.body,{attributes:true,attributeFilter:["style","class"],childList:true,subtree:true});
-setInterval(sync,500);
-})();</script>
 </body> </html>
