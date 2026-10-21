@@ -4665,11 +4665,13 @@ try{window.gxRender&&window.gxRender()}catch(e){}try{render()}catch(e){}try{save
 })();</script>
 <script id="cleanui">(function(){"use strict";
 var st=document.createElement("style");
-st.textContent=".sub,.adm-sub,#mobsub,#shgsub,#gpl .tx span,#shp .tx span,#wdlist .tx span:nth-of-type(-n+2),.ac-note:not(#m_info):not(#own .ac-note),.ac-sub,.pbox .dsc{display:none!important}#toptabs,#topw{display:none!important}";
+st.textContent=".sub,.adm-sub,#mobsub,#shgsub,#wdlist .tx span:nth-of-type(-n+2),.ac-note:not(#m_info):not(#own .ac-note),.ac-sub,.pbox .dsc{display:none!important}#toptabs,#topw{display:none!important}";
 document.head.appendChild(st);
 var RX=/^(Введи промокод|Переводи монеты|Покупай питомцев|Выбери мир|Питомцы покупаются|Управление игроками|Бросай, качай|Максимум 30 дней|Кто, когда и что)/;
 function sweep(){try{if(typeof topTab!=="undefined"&&topTab==="g"){topTab="c"+(window.topLW||0)}}catch(e){}
  document.querySelectorAll(".pbox div,.pbox p,.stage p").forEach(function(e){if(e.children.length===0&&RX.test((e.textContent||"").trim()))e.style.display="none"})}
 sweep();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(sweep,150)}).observe(document.body,{childList:true,subtree:true});
 })();</script>
+<script id="topfix">(function(){var st=document.createElement("style");st.textContent="#toplist .ti.eq{background:linear-gradient(90deg,rgba(255,200,60,.28),rgba(255,140,30,.12))!important;border:2px solid #ffc23c!important;box-shadow:0 0 18px rgba(255,194,60,.55),inset 0 0 12px rgba(255,194,60,.18)!important;transform:scale(1.02)}#toplist .ti.eq .tx b{color:#ffe08a}";document.head.appendChild(st);
+var el=document.getElementById("toptitle");if(el){var f=function(){var t=el.textContent;if(t.indexOf(" · ")>-1){el.textContent=t.split(" · ")[0]}};f();new MutationObserver(f).observe(el,{childList:true,characterData:true,subtree:true})}})();</script>
 </body> </html>
